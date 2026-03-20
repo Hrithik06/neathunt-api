@@ -2,18 +2,18 @@ import { Base64 } from "js-base64";
 import { convert } from "html-to-text";
 import { DecodedEmail, ExtractedBodyPart, GmailMessage, GmailMessagePartHeader, GmailMessagePart, MessageWithBody, NormalizedMetadataMessage, NormalizedFullMessage } from "../types/gmail.js";
 
-function normalizeBaseMessage(msg: GmailMessage) {
-  if (!msg?.id) throw new Error('normalizeBaseMessage: missing message id');
-  if (!msg?.threadId) throw new Error('normalizeBaseMessage: missing threadId');
+// function normalizeBaseMessage(msg: GmailMessage) {
+//   if (!msg?.id) throw new Error('normalizeBaseMessage: missing message id');
+//   if (!msg?.threadId) throw new Error('normalizeBaseMessage: missing threadId');
 
-  return {
-    id: msg.id,
-    threadId: msg.threadId,
-    headers: extractHeaders(msg.payload?.headers ?? []),
-    snippet: msg.snippet ?? '',
-    historyId: msg.historyId ?? '',
-  };
-}
+//   return {
+//     id: msg.id,
+//     threadId: msg.threadId,
+//     headers: extractHeaders(msg.payload?.headers ?? []),
+//     snippet: msg.snippet ?? '',
+//     historyId: msg.historyId ?? '',
+//   };
+// }
 
 export function normalizeMessage(
   msg: GmailMessage,
