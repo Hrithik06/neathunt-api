@@ -177,7 +177,7 @@ export function classifyOnSubject() {}
 export function classifyOnSnippet() {}
 export function classifyOnBody() {}
 //Ignore Job invites from naukri // in query only see negative query can be made
-export function extractCompanyNameFromAddress() {
+export function extractNameAndAddress(from: string) {
   //TODO: Extract name using From Address Everything before < tag is most of the time name but there are cases
   //"\"Codestore Technologies Pvt Ltd.\" <info@codestoresolutions.com>"
   //"Smart Working Solutions <no-reply@hire.lever.co>"
@@ -185,6 +185,24 @@ export function extractCompanyNameFromAddress() {
   // Ignore Alerts  "from": "Naukri Alerts <naukrialerts@naukri.com>",
   //    "from": "Indeed <alert@indeed.com>",
   // Ignore Match    "from": "Indeed <donotreply@match.indeed.com>"
+  from = from.replaceAll(/"/g, "").trim();
+  const ignoreList = ["match", "alert", "alerts", "via"]; //maybe add emailIds like ["naukrialerts@naukri.com","donotreply@match.indeed.com"]
+  let hasIgnoreKey = false;
+  for (const key of ignoreList) {
+    if (from.includes(key)) {
+      hasIgnoreKey = true;
+      break; //or return here itself
+    }
+  }
+  if (hasIgnoreKey) {
+    // return something such that the JS object which has this from is set as not a job related mail and not to be processed further
+    return;
+  }
+  const fromArr = from.split("<");
+  const senderName = fromArr[0].trim();
+  const senderMail = fromArr[1].trim().slice(0, -1);
+
+  return { senderName, senderMail };
 }
 
 export function extractCompanyNameFromSubject() {
