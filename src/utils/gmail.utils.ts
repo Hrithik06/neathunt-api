@@ -1,6 +1,15 @@
 import { Base64 } from "js-base64";
 import { convert } from "html-to-text";
-import { DecodedEmail, ExtractedBodyPart, GmailMessage, GmailMessagePartHeader, GmailMessagePart, MessageWithBody, NormalizedMetadataMessage, NormalizedFullMessage } from "../types/gmail.js";
+import {
+  DecodedEmail,
+  ExtractedBodyPart,
+  GmailMessage,
+  GmailMessagePartHeader,
+  GmailMessagePart,
+  MessageWithBody,
+  NormalizedMetadataMessage,
+  NormalizedFullMessage,
+} from "../types/gmail.js";
 
 // function normalizeBaseMessage(msg: GmailMessage) {
 //   if (!msg?.id) throw new Error('normalizeBaseMessage: missing message id');
@@ -17,44 +26,46 @@ import { DecodedEmail, ExtractedBodyPart, GmailMessage, GmailMessagePartHeader, 
 
 export function normalizeMessage(
   msg: GmailMessage,
-  format: "metadata" | "full"
+  format: "metadata" | "full",
 ) {
   const base = {
     id: msg.id,
     threadId: msg.threadId,
     headers: extractHeaders(msg.payload?.headers ?? []),
     snippet: msg.snippet,
-    historyId: msg.historyId
-  }
+    historyId: msg.historyId,
+  };
 
   if (format === "full") {
     return {
       ...base,
       parts: extractParts(msg.payload ?? {}),
-    }
+    };
   }
 
-  return base
+  return base;
 }
 export const normalizeMetadataMessage = (msg: GmailMessage) =>
-  normalizeMessage(msg, "metadata")
+  normalizeMessage(msg, "metadata");
 
 export const normalizeFullMessage = (msg: GmailMessage) =>
-  normalizeMessage(msg, "full")
+  normalizeMessage(msg, "full");
 
 export function extractHeaders(headers: GmailMessagePartHeader[]) {
   // const headersReqd = ["Subject", "From", "Reply-To"]
   const headerObj = {
-    date: headers.find(h => h.name === "Date")?.value ?? null,
-    subject: headers.find(h => h.name === "Subject")?.value ?? null,
-    from: headers.find(h => h.name === "From")?.value ?? null,
-    replyTo: headers.find(h => h.name === "Reply-To")?.value ?? null
-  }
-  return headerObj
-
+    date: headers.find((h) => h.name === "Date")?.value ?? null,
+    subject: headers.find((h) => h.name === "Subject")?.value ?? null,
+    from: headers.find((h) => h.name === "From")?.value ?? null,
+    replyTo: headers.find((h) => h.name === "Reply-To")?.value ?? null,
+  };
+  return headerObj;
 }
 
-export function extractParts(part: GmailMessagePart, flatParts: GmailMessagePart[] = []) {
+export function extractParts(
+  part: GmailMessagePart,
+  flatParts: GmailMessagePart[] = [],
+) {
   //extract all nested parts by flatteniing the parts[]
   // "?" Guard against will crash if mimeType is undefined
   if (part.mimeType?.startsWith("multipart/")) {
@@ -96,9 +107,8 @@ export function extractBodyPart(partsList: GmailMessagePart[]) {
 }
 
 export function decodeToPlainText(
-  emailBody: ExtractedBodyPart | null
+  emailBody: ExtractedBodyPart | null,
 ): string | null {
-
   if (!emailBody) return null;
 
   if (!emailBody.rawBody || !Base64.isValid(emailBody.rawBody)) {
@@ -113,7 +123,6 @@ export function decodeToPlainText(
     }
 
     return bodyText;
-
   } catch (error) {
     if (error instanceof Error) {
       console.error("decodeToPlainText Error:", error.message);
@@ -124,7 +133,9 @@ export function decodeToPlainText(
   }
 }
 
-export function attachBodyPart(msg: NormalizedFullMessage): MessageWithBody | null {
+export function attachBodyPart(
+  msg: NormalizedFullMessage,
+): MessageWithBody | null {
   const bodyPart = extractBodyPart(msg.parts);
 
   if (!bodyPart) return null;
@@ -135,7 +146,7 @@ export function attachBodyPart(msg: NormalizedFullMessage): MessageWithBody | nu
     headers: msg.headers,
     snippet: msg.snippet,
     historyId: msg.historyId,
-    bodyPart
+    bodyPart,
   };
 }
 
@@ -152,19 +163,19 @@ export function decodeEmail(msg: MessageWithBody | null): DecodedEmail | null {
     headers: msg.headers,
     snippet: msg.snippet,
     historyId: msg.historyId,
-    bodyText
+    bodyText,
   };
 }
 // company
-// role 
+// role
 // status
 // appliedDate
 // emailSubject
 // emailThreadId
 
-export function classifyOnSubject() { }
-export function classifyOnSnippet() { }
-export function classifyOnBody() { }
+export function classifyOnSubject() {}
+export function classifyOnSnippet() {}
+export function classifyOnBody() {}
 //Ignore Job invites from naukri // in query only see negative query can be made
 export function extractCompanyNameFromAddress() {
   //TODO: Extract name using From Address Everything before < tag is most of the time name but there are cases
@@ -177,11 +188,11 @@ export function extractCompanyNameFromAddress() {
 }
 
 export function extractCompanyNameFromSubject() {
-  //    "subject": "Your application to Svaksha Technologies was accepted!",
+  // "subject": "Your application to Svaksha Technologies was accepted!",
   //"subject": "Your application to Web Developer at OptimHire",
   //"from": "LinkedIn <jobs-noreply@linkedin.com>",
   // "subject": "Hrithik, your application was sent to Binated",
-  //  "from": "LinkedIn <jobs-noreply@linkedin.com>",
+  // "from": "LinkedIn <jobs-noreply@linkedin.com>",
 }
 
 export function extractCompanyNameFromSnippet() {
