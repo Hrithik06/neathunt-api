@@ -11,6 +11,7 @@ import {
   saveGmailTokens,
   updateScopes,
 } from "../services/user.service.js";
+
 import { hasFullGmailTokens } from "../utils/hasFullGmailTokens.js";
 
 const BASE_SCOPES = [
@@ -142,7 +143,7 @@ export const googleUpgradeCallback = async (req: Request, res: Response) => {
 
     const { tokens } = await oauth2Client.getToken({
       code: code,
-      redirect_uri: process.env.GOOGLE_UPGRADE_REDIRECT_URI, //need to send again cuz we have multiple if not sent google uses last used/default callback
+      redirect_uri: process.env.GOOGLE_UPGRADE_REDIRECT_URI, //need to send again cuz we have different uris if not sent google uses last used/default callbacklogout
     });
 
     oauth2Client.setCredentials(tokens);
@@ -158,20 +159,6 @@ export const googleUpgradeCallback = async (req: Request, res: Response) => {
     // console.log(accessToken)
     // console.log(tokens.access_token === accessToken)
 
-    const response = await fetch(
-      "https://www.googleapis.com/oauth2/v2/userinfo",
-      {
-        headers: {
-          Authorization: `Bearer ${tokens.access_token}`,
-        },
-      },
-    );
-
-    const data = await response.json();
-
-    const googleId = data.id;
-    const user = await getUserByGoogleId(googleId);
-
     if (!tokens.scope) {
       throw new Error("Missing scopes in OAuth callback");
     }
@@ -185,9 +172,22 @@ export const googleUpgradeCallback = async (req: Request, res: Response) => {
         `http://localhost:5173${state.redirectTo}?error=gmail_access_denied`,
       );
     }
+    const response = await fetch(
+      "https://www.googleapis.com/oauth2/v2/userinfo",
+      {
+        headers: {
+          Authorization: `Bearer ${tokens.access_token}`,
+        },
+      },
+    );
+
+    const data = await response.json();
+
+    const googleId = data.id;
     if (!googleId) {
       throw new Error("Missing googleId in OAuth callback");
     }
+    const user = await getUserByGoogleId(googleId);
     await updateScopes(user.id, grantedScopes);
     await enableAutomaticTracking(user.id);
 
@@ -217,4 +217,9 @@ export const getMe = async (req: Request, res: Response) => {
   const user = await getUserById(req.user.userId);
   //NOTE:Don't send all data
   res.json({ user });
+};
+
+export const logout = (req: Request, res: Response) => {
+  res.clearCookie("session");
+  res.json({ success: true });
 };

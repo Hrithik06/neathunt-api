@@ -5,9 +5,9 @@ import {
   getMe,
   googleUpgrade,
   googleUpgradeCallback,
+  logout,
 } from "../controllers/auth.controller.js";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
-// import { authenticate } from "../middleware/auth.middleware";
 
 const router = Router();
 
@@ -17,4 +17,5 @@ router.get("/google/callback", googleCallback);
 router.get("/google/upgrade", googleUpgrade);
 router.get("/google/callback/upgrade", googleUpgradeCallback);
 router.get("/me", authMiddleware, getMe);
+router.get("/logout", logout);
 export default router;

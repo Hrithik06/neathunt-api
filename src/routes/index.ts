@@ -3,7 +3,7 @@ import authRoutes from "./auth.routes.js";
 import healthRoutes from "./health.routes.js";
 import userRoutes from "./user.routes.js";
 
-import applicationsRoutes from "./applications.route.js";
+import applicationsRoutes from "./jobs.route.js";
 
 const router = Router();
 
