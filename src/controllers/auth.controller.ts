@@ -63,25 +63,6 @@ export const googleCallback = async (req: Request, res: Response) => {
     //NO need as these are given by default
     // const hasAllScopes = checkScopes(grantedScopes, BASE_SCOPES);
 
-    // if (!hasAllScopes) {
-    //   res.status(403).redirect("http://localhost:5173/login");
-    //   // return res.status(403).json({ success: false, reason:
-    //   // "missing_required_scopes",
-
-    //   // // missing: missingScopes, });
-    // }
-
-    // const oauth2 = google.oauth2({
-    //   auth: oauth2Client,
-    //   version: "v2",
-    // });
-
-    // const { data } = await oauth2.userinfo.get();
-
-    // const accessToken = (await oauth2Client.getAccessToken()).token;
-    // console.log(accessToken)
-    // console.log(tokens.access_token === accessToken)
-
     const response = await fetch(
       "https://www.googleapis.com/oauth2/v2/userinfo",
       {
@@ -231,17 +212,6 @@ export const googleUpgradeCallback = async (req: Request, res: Response) => {
     res.redirect("http://localhost:5173/dashboard?error=upgrade_failed");
   }
 };
-// export const getMe = async (req: Request, res: Response) => {
-//   const session = req.cookies.session;
-
-//   if (!session) {
-//     return res.status(401).json({ user: null });
-//   }
-//   const user = await getUser(session.googleId);
-//   res.json({
-//     user,
-//   });
-// };
 
 export const getMe = async (req: Request, res: Response) => {
   const user = await getUserById(req.user.userId);

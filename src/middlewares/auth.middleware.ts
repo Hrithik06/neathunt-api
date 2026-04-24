@@ -7,15 +7,13 @@ export const authMiddleware = (
 ) => {
   const token = req.cookies.session;
 
-  if (!token) {
-    return res.status(401).json({ user: null });
-  }
+  if (!token) return res.status(401).json({ error: "Unauthorized" });
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!);
-    req.user = decoded; // { userId, email }
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = decoded; // { userId }
     next();
   } catch {
-    return res.status(401).json({ user: null });
+    return res.status(401).json({ error: "Unauthorized" });
   }
 };
