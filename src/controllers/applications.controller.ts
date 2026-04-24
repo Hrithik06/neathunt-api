@@ -1,28 +1,28 @@
 import { Request, Response } from "express";
 import { fetchEmails } from "../services/gmailSync.service.js";
-import { getUser } from "../services/user.service.js";
+import { getUserByGoogleId } from "../services/user.service.js";
 // import { Base64 } from "js-base64";
 export async function scanGmailForApplications(req: Request, res: Response) {
   // TODO: get googleId from req
   const googleId = process.env.GOOGLE_ID;
   if (!googleId) {
-    res.status(400).send("Invalid Google Id")
-    return
+    res.status(400).send("Invalid Google Id");
+    return;
   }
-  const user = await getUser(googleId);
+  const user = await getUserByGoogleId(googleId);
   if (!user) {
-    res.status(400).send("Invalid User")
-    return
+    res.status(400).send("Invalid User");
+    return;
   }
 
   const { refreshToken, accessToken } = user;
   if (!refreshToken) {
-    res.status(500).send("Missing Refresh token of User in DB")
-    return
+    res.status(500).send("Missing Refresh token of User in DB");
+    return;
   }
   if (!accessToken) {
-    res.status(500).send("Missing Access token of User in DB")
-    return
+    res.status(500).send("Missing Access token of User in DB");
+    return;
   }
   const message = await fetchEmails(refreshToken, accessToken);
   // // res.json(message.data.payload.parts[0].body.data);

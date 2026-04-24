@@ -1,10 +1,13 @@
 import { Request, Response } from "express";
+import jwt from "jsonwebtoken";
+
 import { getOAuthClient } from "../config/googleOAuth.js";
 import { checkScopes } from "../utils/checkScopes.js";
 import {
   enableAutomaticTracking,
   findOrCreateUser,
-  getUser,
+  getUserById,
+  getUserByGoogleId,
   saveGmailTokens,
   updateScopes,
 } from "../services/user.service.js";
@@ -21,6 +24,20 @@ const GMAIL_SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"];
 const ALL_SCOPES = [...BASE_SCOPES, ...GMAIL_SCOPES];
 
 export const googleAuth = (req: Request, res: Response) => {
+  const token = req.cookies.session;
+  console.log(token);
+  if (token) {
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
+
+      if (decoded?.userId) {
+        return res.redirect("http://localhost:5173/dashboard");
+      }
+    } catch {
+      //do nothing
+      // invalid token → fall through to OAuth
+    }
+  }
   const oauth2Client = getOAuthClient();
   const authUrl = oauth2Client.generateAuthUrl({
     // access_type: "offline",
@@ -71,7 +88,7 @@ export const googleCallback = async (req: Request, res: Response) => {
         headers: {
           Authorization: `Bearer ${tokens.access_token}`,
         },
-      }
+      },
     );
 
     const data = await response.json();
@@ -88,10 +105,21 @@ export const googleCallback = async (req: Request, res: Response) => {
       scopes: grantedScopes,
     };
     const user = await findOrCreateUser(profile);
-    //TODO:Set proper session
-    res.cookie("session", user.email, {
+    const token = jwt.sign(
+      {
+        userId: user.id,
+        email: user.email,
+      },
+      process.env.JWT_SECRET!,
+      { expiresIn: "7d" },
+      // { expiresIn: 10 }
+    );
+
+    res.cookie("session", token, {
       httpOnly: true,
-      maxAge: 60 * 60 * 24,
+      secure: false, // true in production (https)
+      maxAge: 7 * 24 * 60 * 60,
+      // sameSite: "lax",
     });
 
     res.redirect("http://localhost:5173/dashboard");
@@ -138,7 +166,6 @@ export const googleUpgradeCallback = async (req: Request, res: Response) => {
 
     oauth2Client.setCredentials(tokens);
 
-
     // const oauth2 = google.oauth2({
     //   auth: oauth2Client,
     //   version: "v2",
@@ -156,12 +183,13 @@ export const googleUpgradeCallback = async (req: Request, res: Response) => {
         headers: {
           Authorization: `Bearer ${tokens.access_token}`,
         },
-      }
+      },
     );
 
     const data = await response.json();
 
     const googleId = data.id;
+    const user = await getUserByGoogleId(googleId);
 
     if (!tokens.scope) {
       throw new Error("Missing scopes in OAuth callback");
@@ -179,12 +207,12 @@ export const googleUpgradeCallback = async (req: Request, res: Response) => {
     if (!googleId) {
       throw new Error("Missing googleId in OAuth callback");
     }
-    await updateScopes(googleId, grantedScopes);
-    await enableAutomaticTracking(googleId);
+    await updateScopes(user.id, grantedScopes);
+    await enableAutomaticTracking(user.id);
 
     if (hasFullGmailTokens(tokens) && googleId) {
       await saveGmailTokens(
-        googleId,
+        user.id,
         tokens.access_token,
         tokens.refresh_token,
         new Date(tokens.expiry_date),
@@ -203,14 +231,20 @@ export const googleUpgradeCallback = async (req: Request, res: Response) => {
     res.redirect("http://localhost:5173/dashboard?error=upgrade_failed");
   }
 };
-export const getMe = async (req: Request, res: Response) => {
-  const session = req.cookies.session;
+// export const getMe = async (req: Request, res: Response) => {
+//   const session = req.cookies.session;
 
-  if (!session) {
-    return res.status(401).json({ user: null });
-  }
-  const user = await getUser(session.googleId);
-  res.json({
-    user,
-  });
+//   if (!session) {
+//     return res.status(401).json({ user: null });
+//   }
+//   const user = await getUser(session.googleId);
+//   res.json({
+//     user,
+//   });
+// };
+
+export const getMe = async (req: Request, res: Response) => {
+  const user = await getUserById(req.user.userId);
+  //NOTE:Don't send all data
+  res.json({ user });
 };
