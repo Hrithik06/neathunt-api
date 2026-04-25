@@ -13,6 +13,7 @@ import {
 } from "../services/user.service.js";
 
 import { hasFullGmailTokens } from "../utils/hasFullGmailTokens.js";
+import { signToken, verifyToken } from "../services/jwt.service.js";
 
 const BASE_SCOPES = [
   "https://www.googleapis.com/auth/userinfo.profile",
@@ -24,30 +25,33 @@ const GMAIL_SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"];
 
 const ALL_SCOPES = [...BASE_SCOPES, ...GMAIL_SCOPES];
 
-export const googleAuth = (req: Request, res: Response) => {
+export const googleAuth = async (req: Request, res: Response) => {
   const token = req.cookies.session;
-  console.log(token);
+
   if (token) {
     try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
+      const decoded = verifyToken(token);
+      // 🔴 IMPORTANT: check DB
+      const user = await getUserById(decoded.userId);
 
-      if (decoded?.userId) {
-        return res.redirect("http://localhost:5173/dashboard");
+      if (!user) {
+        throw new Error("User not found");
       }
+
+      // ✅ already logged in → skip OAuth
+      return res.redirect("http://localhost:5173/dashboard");
     } catch {
-      //do nothing
-      // invalid token → fall through to OAuth
+      // invalid token OR user missing → continue to OAuth
     }
   }
+
   const oauth2Client = getOAuthClient();
   const authUrl = oauth2Client.generateAuthUrl({
-    // access_type: "offline",
-    // prompt: "consent",
     scope: BASE_SCOPES,
     redirect_uri: process.env.GOOGLE_REDIRECT_URI,
   });
 
-  res.redirect(authUrl);
+  return res.redirect(authUrl);
 };
 
 export const googleCallback = async (req: Request, res: Response) => {
@@ -87,15 +91,10 @@ export const googleCallback = async (req: Request, res: Response) => {
       scopes: grantedScopes,
     };
     const user = await findOrCreateUser(profile);
-    const token = jwt.sign(
-      {
-        userId: user.id,
-        email: user.email,
-      },
-      process.env.JWT_SECRET!,
-      { expiresIn: "7d" },
-      // { expiresIn: 10 }
-    );
+    const token = signToken({
+      userId: user.id,
+      email: user.email,
+    });
 
     res.cookie("session", token, {
       httpOnly: true,

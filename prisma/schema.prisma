@@ -36,18 +36,19 @@ model User {
   automaticTracking Boolean @default(false) // Enabled when Gmail scope granted
 
   // Relations
-  applications Application[]
+  jobs Job[]
 
   // Timestamps
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  // applications Application[]
 
   // Indexes for performance
   @@index([email])
   @@index([googleId])
 }
 
-model Application {
+model Job {
   id String @id @default(cuid())
 
   // Foreign key
@@ -56,42 +57,56 @@ model Application {
 
   // Job details
   company     String
-  role        String
-  status      ApplicationStatus @default(APPLIED)
-  appliedDate DateTime          @default(now())
+  title       String
+  status      JobStatus @default(APPLIED)
+  appliedDate DateTime?
 
   // Tracking source
-  source ApplicationSource @default(MANUAL)
+  source JobSource @default(MANUAL)
 
   // Gmail-specific data (only for automatic tracking)
-  emailThreadId String? // Gmail thread ID
-  emailSubject  String?
+  emailThreadId  String? // Gmail thread ID
+  emailMessageId String?
+  emailSubject   String?
 
   // Additional fields
   notes String? @db.Text
   url   String? // Job posting URL
 
   // Timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime? //soft delete, delete becomes an update default it will be null
 
   // Indexes
+  @@unique([userId, emailMessageId]) //together are unique
   @@index([userId])
   @@index([status])
   @@index([source])
   @@index([emailThreadId])
+  @@index([deletedAt])
 }
 
-enum ApplicationStatus {
+enum JobStatus {
   APPLIED
-  INTERVIEWING
+  INTERVIEW_SCHEDULED
+  INTERVIEW_COMPLETED
   OFFER
   REJECTED
   ACCEPTED
   WITHDRAWN
 }
 
-enum ApplicationSource {
+enum JobSource {
   MANUAL
   GMAIL_AUTO
 }
+
+//In future if needed
+// enum JobPlatform {
+//   LINKEDIN
+//   NAUKRI
+//   INDEED
+//   COMPANY_SITE
+//   OTHER
+// }

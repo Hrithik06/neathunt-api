@@ -1,19 +1,53 @@
-import jwt from "jsonwebtoken";
 import { Request, Response, NextFunction } from "express";
-export const authMiddleware = (
+import { verifyToken } from "../services/jwt.service.js";
+import { getUserById } from "../services/user.service.js";
+
+export const authMiddleware = async (
   req: Request,
   res: Response,
   next: NextFunction,
 ) => {
+  console.log("Auth Middleware");
   const token = req.cookies.session;
 
   if (!token) return res.status(401).json({ error: "Unauthorized" });
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = verifyToken(token);
+    // 🔴 IMPORTANT: check DB
+    const user = await getUserById(decoded.userId);
+
+    if (!user) {
+      return res.status(401).json({ error: "User no longer exists" });
+    }
+
     req.user = decoded; // { userId }
     next();
   } catch {
     return res.status(401).json({ error: "Unauthorized" });
   }
 };
+
+// export const authMiddleware = async (req, res, next) => {
+//   const token = req.cookies.session;
+
+//   if (!token) {
+//     return res.status(401).json({ error: "Unauthorized" });
+//   }
+
+//   try {
+//     const decoded = verifyToken(token);
+
+//     // 🔴 IMPORTANT: check DB
+//     const user = await getUser(decoded.userId);
+
+//     if (!user) {
+//       return res.status(401).json({ error: "User no longer exists" });
+//     }
+
+//     req.user = decoded;
+//     next();
+//   } catch {
+//     return res.status(401).json({ error: "Unauthorized" });
+//   }
+// };

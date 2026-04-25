@@ -78,7 +78,13 @@ async function main() {
       email: "bob.demo@gmail.com",
       name: "Bob Demo",
       picture: "https://i.pravatar.cc/150?img=2",
-      scopes: ["openid", "email", "profile"],
+      scopes: [
+        "openid",
+        "email",
+        "profile",
+        "https://www.googleapis.com/auth/gmail.readonly",
+      ],
+      automaticTracking: true, // 👈 Gmail enabled user
     },
     {
       googleId: "google-demo-3",
@@ -119,7 +125,47 @@ async function main() {
       }),
     ),
   );
+  const allUsers = await prisma.user.findMany();
 
+  // --- JOBS ---
+  await Promise.all(
+    allUsers.map(async (user) => {
+      const jobs = [
+        {
+          userId: user.id,
+          company: "Google",
+          title: "Frontend Engineer",
+          status: "APPLIED",
+          source: "MANUAL",
+          notes: "Applied via careers page",
+        },
+        {
+          userId: user.id,
+          company: "Microsoft",
+          title: "Software Engineer",
+          status: "REJECTED",
+          source: "MANUAL",
+          notes: "Rejected after OA",
+        },
+      ];
+
+      // Only add Gmail jobs if user has enabled tracking
+      if (user.automaticTracking) {
+        jobs.push({
+          userId: user.id,
+          company: "Amazon",
+          title: "SDE I",
+          status: "INTERVIEW_SCHEDULED",
+          source: "GMAIL_AUTO",
+          emailMessageId: `msg-${user.id}-1`,
+          emailThreadId: `thread-${user.id}-1`,
+          emailSubject: "Your application at Amazon",
+        });
+      }
+
+      return prisma.job.createMany({ data: jobs });
+    }),
+  );
   console.log("✅ Seed completed successfully");
 }
 
