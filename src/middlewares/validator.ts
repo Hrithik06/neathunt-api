@@ -1,13 +1,13 @@
 import { NextFunction, Request, Response } from "express";
-import { ZodObject } from "zod";
+import { ZodType, z } from "zod";
 
 export const validate =
-  (schema: ZodObject) => (req: Request, res: Response, next: NextFunction) => {
+  (schema: ZodType) => (req: Request, res: Response, next: NextFunction) => {
     const result = schema.safeParse(req.body);
 
     if (!result.success) {
       return res.status(400).json({
-        error: result.error.flatten(),
+        error: z.treeifyError(result.error),
       });
     }
 
@@ -16,15 +16,15 @@ export const validate =
   };
 
 export const validateQuery =
-  (schema: ZodObject) => (req: Request, res: Response, next: NextFunction) => {
+  (schema: ZodType) => (req: Request, res: Response, next: NextFunction) => {
     const result = schema.safeParse(req.query);
 
     if (!result.success) {
       return res.status(400).json({
-        error: result.error.flatten(),
+        // error: result.error.flatten(),
+        error: z.treeifyError(result.error),
       });
     }
 
-    req.body = result.data; // ✅ sanitized + typed
     next();
   };
