@@ -1,16 +1,32 @@
-import { Prisma } from "../generated/prisma/client.js";
 import { prisma } from "../lib/prisma.js";
-import { CreateJobServiceInput, JobWhereInput } from "../types/jobs.js";
+import {
+  CreateJobServiceInput,
+  JobWhereInput,
+  UpdateJobInput,
+} from "../types/jobs.js";
 const getBaseWhere = (userId: string): JobWhereInput => ({
   userId,
   deletedAt: null, //ignore jobs which have value for deletedAt as they are soft deleted
 });
 
-export async function findAllJobs(userId: string) {
+export async function findAllJobs(filter: {
+  userId: string;
+  company?: string;
+  status?: string;
+  source?: string;
+}) {
+  const where = { ...filter, ...getBaseWhere(filter.userId) };
+
+  if (filter.company) {
+    where.company = { contains: filter.company, mode: "insensitive" };
+  }
+  // if (filter.status) {
+  //   where.status = filter.status;
+  // }
   const jobs = await prisma.job.findMany({
-    where: getBaseWhere(userId),
+    where,
   });
-  return [...jobs];
+  return jobs;
 }
 
 //For Manual Entry
@@ -18,6 +34,12 @@ export async function createJob(data: CreateJobServiceInput) {
   return prisma.job.create({
     data, // matches UncheckedCreateInput
   });
+}
+
+export async function updateJob(jobId: string, data: UpdateJobInput) {
+  const updatedJob = await prisma.job.update({ where: { id: jobId }, data });
+  console.log(updatedJob);
+  return updatedJob;
 }
 
 //For deleted

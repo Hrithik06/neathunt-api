@@ -1,18 +1,16 @@
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import {
   createJob,
   findAllJobs,
   softDeleteJob,
+  updateJob,
 } from "../services/jobs.service.js";
 import { prisma } from "../lib/prisma.js";
 type Params = {
   id: string;
 };
-export const getAllJobs = async (req: Request, res: Response) => {
-  const userId = req.user.userId;
-  const allJobs = await findAllJobs(userId);
-  res.json(allJobs);
-};
+
+// add new job
 export const addJob = async (req: Request, res: Response) => {
   const userId = req.user.userId;
 
@@ -20,27 +18,41 @@ export const addJob = async (req: Request, res: Response) => {
     ...req.body, // validated by Zod
     userId, // injected by server
   };
-
   const jobDB = await createJob(job);
-
   res.json(jobDB);
 };
+//edit job
 export const editJob = async (req: Request<Params>, res: Response) => {
-  const { id } = req.params;
-  console.log(id);
-  res.json({ id });
+  const { id: jobId } = req.params;
+  const job = {
+    ...req.body, // validated by Zod
+  };
+
+  const updatedJob = await updateJob(jobId, job);
+  res.json(updatedJob);
 };
 export const deleteJob = async (req: Request<Params>, res: Response) => {
   const { id: jobId } = req.params;
   const userId = req.user.userId;
   const deletedJob = await softDeleteJob(jobId, userId);
-  res.json({ ...deletedJob });
+  res.json(deletedJob);
 };
-export const filterJobs = async (req: Request, res: Response) => {
-  const query = req.query.q;
-  console.log(query);
-  res.json({ query });
+
+//filter jobs
+export const getJobs = async (req: Request, res: Response) => {
+  const { company, status, source } = req.query;
+  const userId = req.user.userId;
+  const jobs = await findAllJobs({
+    userId,
+    company,
+    status,
+    source,
+  });
+
+  res.json(jobs);
 };
+
+//seed dummy data
 export const seedJobsForUser = async (req: Request, res: Response) => {
   console.log("seedJobsForUser");
   const userId = req.user.userId;
@@ -81,6 +93,7 @@ export const seedJobsForUser = async (req: Request, res: Response) => {
 
   res.json({ message: "Dummy jobs added" });
 };
+//delete all job data
 export const deleteAllJobDataOfUser = async (req: Request, res: Response) => {
   console.log("deleteAllJobDataOfUser");
   const userId = req.user.userId;

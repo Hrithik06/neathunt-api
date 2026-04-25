@@ -31,6 +31,7 @@ export type UpdateJobInput = {
   status?: JobStatus;
   notes?: string;
   url?: string;
+  appliedDate?: string;
 };
 
 // ===== SERVICE TYPES service layer=====
