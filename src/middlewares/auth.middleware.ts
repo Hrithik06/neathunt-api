@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { verifyToken } from "../services/jwt.service.js";
 import { getUserById } from "../services/user.service.js";
+import { JwtPayload } from "../types/auth.js";
 
 export const authMiddleware = async (
   req: Request,
@@ -13,7 +14,7 @@ export const authMiddleware = async (
   if (!token) return res.status(401).json({ error: "Unauthorized" });
 
   try {
-    const decoded = verifyToken(token);
+    const decoded = verifyToken(token) as JwtPayload;
     // 🔴 IMPORTANT: check DB
     const user = await getUserById(decoded.userId);
 

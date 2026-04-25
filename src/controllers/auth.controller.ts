@@ -14,6 +14,7 @@ import {
 
 import { hasFullGmailTokens } from "../utils/hasFullGmailTokens.js";
 import { signToken, verifyToken } from "../services/jwt.service.js";
+import { JwtPayload } from "../types/auth.js";
 
 const BASE_SCOPES = [
   "https://www.googleapis.com/auth/userinfo.profile",
@@ -30,7 +31,7 @@ export const googleAuth = async (req: Request, res: Response) => {
 
   if (token) {
     try {
-      const decoded = verifyToken(token);
+      const decoded = verifyToken(token) as JwtPayload;
       // 🔴 IMPORTANT: check DB
       const user = await getUserById(decoded.userId);
 

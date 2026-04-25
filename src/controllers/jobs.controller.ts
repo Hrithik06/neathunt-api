@@ -1,7 +1,13 @@
 import { Request, Response } from "express";
-import { findAllJobs } from "../services/jobs.service.js";
+import {
+  createJob,
+  findAllJobs,
+  softDeleteJob,
+} from "../services/jobs.service.js";
 import { prisma } from "../lib/prisma.js";
-
+type Params = {
+  id: string;
+};
 export const getAllJobs = async (req: Request, res: Response) => {
   const userId = req.user.userId;
   const allJobs = await findAllJobs(userId);
@@ -9,22 +15,29 @@ export const getAllJobs = async (req: Request, res: Response) => {
 };
 export const addJob = async (req: Request, res: Response) => {
   const userId = req.user.userId;
-  const job = req.body;
-  res.json(job);
+
+  const job = {
+    ...req.body, // validated by Zod
+    userId, // injected by server
+  };
+
+  const jobDB = await createJob(job);
+
+  res.json(jobDB);
 };
-export const editJob = async (req: Request, res: Response) => {
+export const editJob = async (req: Request<Params>, res: Response) => {
   const { id } = req.params;
   console.log(id);
   res.json({ id });
 };
-export const deleteJob = async (req: Request, res: Response) => {
-  const { id } = req.params;
-  console.log(id);
-  res.json({ id });
+export const deleteJob = async (req: Request<Params>, res: Response) => {
+  const { id: jobId } = req.params;
+  const userId = req.user.userId;
+  const deletedJob = await softDeleteJob(jobId, userId);
+  res.json({ ...deletedJob });
 };
 export const filterJobs = async (req: Request, res: Response) => {
   const query = req.query.q;
-
   console.log(query);
   res.json({ query });
 };
@@ -67,4 +80,11 @@ export const seedJobsForUser = async (req: Request, res: Response) => {
   });
 
   res.json({ message: "Dummy jobs added" });
+};
+export const deleteAllJobDataOfUser = async (req: Request, res: Response) => {
+  console.log("deleteAllJobDataOfUser");
+  const userId = req.user.userId;
+
+  await prisma.job.deleteMany({ where: { userId } });
+  res.json({ message: "All Jobs Data Deleted" });
 };

@@ -1,49 +1,47 @@
 import { prisma } from "../lib/prisma.js";
+import { CreateUserInput } from "../types/user.js";
 
 /*
   Idempotent login:
   First login → create user
   Next 100 logins → return same user
 */
-type profileType = {
-  googleId: string;
-  email: string;
-  name?: string;
-  picture?: string;
-  scopes?: string[];
-};
-export async function findOrCreateUser(profile: profileType) {
-  let user = await prisma.user.upsert({
+export async function findOrCreateUser(profile: CreateUserInput) {
+  return prisma.user.upsert({
     where: { googleId: profile.googleId },
     update: {
       email: profile.email,
       name: profile.name,
       picture: profile.picture,
-      // scopes: profile.scopes, //not needed conflicts with updateScopes
+      // scopes handled separately via updateScopes
     },
-    create: profile,
+    create: profile, //create a new user with all profile obj
   });
-  return user;
 }
+
 export async function updateScopes(userId: string, scopes: string[]) {
-  let user = await prisma.user.findUnique({
+  // fetch only what we need
+  const user = await prisma.user.findUnique({
     where: { id: userId },
+    select: { scopes: true },
   });
-  // if (!user) {
-  //   return null;
-  // }
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
   const mergedScopes = Array.from(
     new Set([...(user.scopes ?? []), ...(scopes ?? [])]),
   );
 
-  const updatedUser = await prisma.user.update({
+  return prisma.user.update({
     where: { id: userId },
     data: {
       scopes: mergedScopes,
     },
   });
-  return updatedUser;
 }
+
 export async function enableAutomaticTracking(userId: string) {
   return prisma.user.update({
     where: { id: userId },
@@ -57,28 +55,20 @@ export async function saveGmailTokens(
   refreshToken: string,
   tokenExpiresAt: Date,
 ) {
-  let user = await prisma.user.findUnique({
+  return prisma.user.update({
     where: { id: userId },
+    data: {
+      accessToken,
+      refreshToken,
+      tokenExpiresAt,
+    },
   });
-  // if (!user) {
-  //   return null;
-  // }
-
-  const updatedUser = prisma.user.update({
-    where: { id: userId },
-    data: { accessToken, refreshToken, tokenExpiresAt },
-  });
-  return updatedUser;
 }
 
 export async function getUserByGoogleId(googleId: string) {
-  let user = await prisma.user.findUnique({
+  return prisma.user.findUnique({
     where: { googleId },
   });
-  if (!user) {
-    return null;
-  }
-  return user;
 }
 
 export async function getUserById(userId: string) {
@@ -86,6 +76,7 @@ export async function getUserById(userId: string) {
     where: { id: userId },
   });
 }
+
 export function getAllUsers() {
   return prisma.user.findMany();
 }
