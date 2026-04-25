@@ -1,7 +1,13 @@
-TODO: requireScopes.middleware.ts needed or not? decide
-10-02-2026
-TODO: replace email cookie with sessionId
-TODO: verify OAuth state against session
-TODO: refresh Gmail access token when expired
-TODO: how to make sure upgrade is called only user already exists in DB
-TODO: Add audio like there is on HiringCafe
+[ ] wrap all db operations in try catch and return appropriate response when error in db operation
+
+[ ] requireScopes.middleware.ts needed or not? decide
+
+[x] replace email cookie with sessionId
+
+[ ] verify OAuth state against session
+
+[ ] refresh Gmail access token when expired
+
+[ ] how to make sure upgrade is called only user already exists in DB
+
+[ ] Add audio like there is on HiringCafe
