@@ -1,11 +1,12 @@
-import { NextFunction, Request, Response } from "express";
+import { Request, Response } from "express";
 import {
   createJob,
-  findAllJobs,
+  filterJobs,
   softDeleteJob,
   updateJob,
 } from "../services/jobs.service.js";
 import { prisma } from "../lib/prisma.js";
+import { FilterJobQuery } from "../validators/job.validator.js";
 type Params = {
   id: string;
 };
@@ -31,6 +32,8 @@ export const editJob = async (req: Request<Params>, res: Response) => {
   const updatedJob = await updateJob(jobId, job);
   res.json(updatedJob);
 };
+
+//soft delete
 export const deleteJob = async (req: Request<Params>, res: Response) => {
   const { id: jobId } = req.params;
   const userId = req.user.userId;
@@ -39,14 +42,18 @@ export const deleteJob = async (req: Request<Params>, res: Response) => {
 };
 
 //filter jobs
-export const getJobs = async (req: Request, res: Response) => {
-  const { company, status, source } = req.query;
+export const getJobs = async (
+  req: Request<{}, {}, {}, FilterJobQuery>,
+  res: Response,
+) => {
+  const { company, status, source, q } = req.query;
   const userId = req.user.userId;
-  const jobs = await findAllJobs({
+  const jobs = await filterJobs({
     userId,
     company,
     status,
     source,
+    q,
   });
 
   res.json(jobs);
@@ -54,7 +61,6 @@ export const getJobs = async (req: Request, res: Response) => {
 
 //seed dummy data
 export const seedJobsForUser = async (req: Request, res: Response) => {
-  console.log("seedJobsForUser");
   const userId = req.user.userId;
 
   const jobs = [
@@ -95,7 +101,6 @@ export const seedJobsForUser = async (req: Request, res: Response) => {
 };
 //delete all job data
 export const deleteAllJobDataOfUser = async (req: Request, res: Response) => {
-  console.log("deleteAllJobDataOfUser");
   const userId = req.user.userId;
 
   await prisma.job.deleteMany({ where: { userId } });

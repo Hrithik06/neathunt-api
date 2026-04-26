@@ -7,6 +7,7 @@ export const validate =
 
     if (!result.success) {
       return res.status(400).json({
+        // error: result.error.flatten(),
         error: z.treeifyError(result.error),
       });
     }
@@ -15,16 +16,29 @@ export const validate =
     next();
   };
 
+// export const validateQuery =
+//   (schema: ZodType) => (req: Request, res: Response, next: NextFunction) => {
+//     const result = schema.safeParse(req.query);
+
+//     if (!result.success) {
+//       return res.status(400).json({
+//         // error: result.error.flatten(),
+//         error: z.treeifyError(result.error),
+//       });
+//     }
+
+//     next();
+//   };
 export const validateQuery =
   (schema: ZodType) => (req: Request, res: Response, next: NextFunction) => {
     const result = schema.safeParse(req.query);
 
     if (!result.success) {
       return res.status(400).json({
-        // error: result.error.flatten(),
         error: z.treeifyError(result.error),
       });
     }
 
+    // req.query = result.data; // ✅ use validated + typed data
     next();
   };

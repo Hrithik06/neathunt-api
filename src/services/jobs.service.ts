@@ -1,6 +1,9 @@
+import { title } from "process";
 import { prisma } from "../lib/prisma.js";
 import {
   CreateJobServiceInput,
+  JobSource,
+  JobStatus,
   JobWhereInput,
   UpdateJobInput,
 } from "../types/jobs.js";
@@ -9,24 +12,32 @@ const getBaseWhere = (userId: string): JobWhereInput => ({
   deletedAt: null, //ignore jobs which have value for deletedAt as they are soft deleted
 });
 
-export async function findAllJobs(filter: {
+export async function filterJobs(filter: {
   userId: string;
   company?: string;
-  status?: string;
-  source?: string;
+  status?: JobStatus;
+  source?: JobSource;
+  q?: string;
 }) {
-  const where = { ...filter, ...getBaseWhere(filter.userId) };
+  const where: JobWhereInput = {
+    ...getBaseWhere(filter.userId),
 
-  if (filter.company) {
-    where.company = { contains: filter.company, mode: "insensitive" };
-  }
-  // if (filter.status) {
-  //   where.status = filter.status;
-  // }
-  const jobs = await prisma.job.findMany({
-    where,
-  });
-  return jobs;
+    ...(filter.company && {
+      company: { equals: filter.company, mode: "insensitive" },
+    }),
+    ...(filter.status && { status: filter.status }),
+    ...(filter.source && { source: filter.source }),
+
+    ...(filter.q && {
+      OR: [
+        { company: { contains: filter.q, mode: "insensitive" } },
+        { title: { contains: filter.q, mode: "insensitive" } },
+      ],
+    }),
+  };
+
+  return prisma.job.findMany({ where });
+  // return where;
 }
 
 //For Manual Entry
