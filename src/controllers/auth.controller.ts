@@ -1,5 +1,4 @@
 import { Request, Response } from "express";
-import jwt from "jsonwebtoken";
 
 import { getOAuthClient } from "../config/googleOAuth.js";
 import { checkScopes } from "../utils/checkScopes.js";
@@ -15,6 +14,7 @@ import {
 import { hasFullGmailTokens } from "../utils/hasFullGmailTokens.js";
 import { signToken, verifyToken } from "../services/jwt.service.js";
 import { JwtPayload } from "../types/auth.js";
+import { User } from "../types/user.js";
 
 const BASE_SCOPES = [
   "https://www.googleapis.com/auth/userinfo.profile",
@@ -188,6 +188,9 @@ export const googleUpgradeCallback = async (req: Request, res: Response) => {
       throw new Error("Missing googleId in OAuth callback");
     }
     const user = await getUserByGoogleId(googleId);
+    if (!user) {
+      throw new Error("User not found");
+    }
     await updateScopes(user.id, grantedScopes);
     await enableAutomaticTracking(user.id);
 

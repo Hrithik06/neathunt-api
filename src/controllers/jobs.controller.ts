@@ -20,7 +20,7 @@ export const addJob = async (req: Request, res: Response) => {
     userId, // injected by server
   };
   const jobDB = await createJob(job);
-  res.json(jobDB);
+  res.status(201).json(jobDB);
 };
 //edit job
 export const editJob = async (req: Request<Params>, res: Response) => {
@@ -97,7 +97,7 @@ export const seedJobsForUser = async (req: Request, res: Response) => {
     skipDuplicates: true, // 👈 important
   });
 
-  res.json({ message: "Dummy jobs added" });
+  res.status(201).json({ message: "Dummy jobs added" });
 };
 //delete all job data
 export const deleteAllJobDataOfUser = async (req: Request, res: Response) => {

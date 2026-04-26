@@ -19,5 +19,7 @@ app.use(
 app.use(express.json());
 
 app.use("/api", routes);
-
+app.use((req, res, next) => {
+  res.status(404).send("Oops! Page Not Found. Check your route");
+});
 export default app;

@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { fetchEmails } from "../services/gmailSync.service.js";
+import { getUserById } from "../services/user.service.js";
 // import { getUserByGoogleId } from "../services/user.service.js";
 // import { Base64 } from "js-base64";
 // export async function scanGmailForApplications(req: Request, res: Response) {
@@ -35,7 +36,7 @@ import { fetchEmails } from "../services/gmailSync.service.js";
 export async function scanGmailForApplications(req: Request, res: Response) {
   const userId = req.user.userId;
 
-  const user = await getUser(userId);
+  const user = await getUserById(userId);
 
   if (!user) {
     return res.status(400).send("User not found");
