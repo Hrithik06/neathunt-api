@@ -7,6 +7,7 @@ import {
 } from "../services/jobs.service.js";
 import { prisma } from "../lib/prisma.js";
 import { FilterJobQuery } from "../validators/job.validator.js";
+import { JobStatus } from "../types/jobs.js";
 type Params = {
   id: string;
 };
@@ -14,22 +15,24 @@ type Params = {
 // add new job
 export const addJob = async (req: Request, res: Response) => {
   const userId = req.user.userId;
-
+  const input = req.body;
   const job = {
-    ...req.body, // validated by Zod
+    ...input, // validated by Zod
+    status: input.status ?? JobStatus.APPLIED, // apply defaults for missing fields
+    appliedDate: input.appliedDate ?? new Date(), // apply defaults for missing fields
     userId, // injected by server
   };
   const jobDB = await createJob(job);
   res.status(201).json(jobDB);
 };
 //edit job
+// do not apply defaults, only update provided fields
 export const editJob = async (req: Request<Params>, res: Response) => {
   const { id: jobId } = req.params;
-  const job = {
-    ...req.body, // validated by Zod
-  };
 
-  const updatedJob = await updateJob(jobId, job);
+  const input = req.body; // validated by Zod
+
+  const updatedJob = await updateJob(jobId, input);
   res.json(updatedJob);
 };
 

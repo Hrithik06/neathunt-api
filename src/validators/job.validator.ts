@@ -7,6 +7,7 @@ export const createJobSchema = z.object({
   status: z.enum(JobStatus).optional(),
   notes: z.string().optional(),
   url: z.url().optional(),
+  appliedDate: z.iso.datetime().optional(),
 });
 
 export const updateJobSchema = z.object({
