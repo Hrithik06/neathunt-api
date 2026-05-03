@@ -1,5 +1,5 @@
 import { prisma } from "../lib/prisma.js";
-import { CreateUserInput } from "../types/user.js";
+import { CreateUserInput, UpdateUserInput } from "../types/user.js";
 
 /*
   Idempotent login:
@@ -71,12 +71,29 @@ export async function getUserByGoogleId(googleId: string) {
   });
 }
 
-export async function getUserById(userId: string) {
+export async function getFullUserById(userId: string) {
   return prisma.user.findUnique({
     where: { id: userId },
   });
 }
-
-export function getAllUsers() {
+export async function getSafeUserById(userId: string) {
+  return prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      email: true,
+      timezone: true,
+      timezoneInitialized: true,
+    },
+  });
+}
+export async function getAllUsers() {
   return prisma.user.findMany();
+}
+
+export async function updateUser(userId: string, data: UpdateUserInput) {
+  return prisma.user.update({
+    where: { id: userId },
+    data,
+  });
 }

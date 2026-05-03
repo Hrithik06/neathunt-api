@@ -5,7 +5,7 @@ import { checkScopes } from "../utils/checkScopes.js";
 import {
   enableAutomaticTracking,
   findOrCreateUser,
-  getUserById,
+  getSafeUserById,
   getUserByGoogleId,
   saveGmailTokens,
   updateScopes,
@@ -14,7 +14,6 @@ import {
 import { hasFullGmailTokens } from "../utils/hasFullGmailTokens.js";
 import { signToken, verifyToken } from "../services/jwt.service.js";
 import { JwtPayload } from "../types/auth.js";
-import { User } from "../types/user.js";
 
 const BASE_SCOPES = [
   "https://www.googleapis.com/auth/userinfo.profile",
@@ -33,7 +32,7 @@ export const googleAuth = async (req: Request, res: Response) => {
     try {
       const decoded = verifyToken(token) as JwtPayload;
       // 🔴 IMPORTANT: check DB
-      const user = await getUserById(decoded.userId);
+      const user = await getSafeUserById(decoded.userId);
 
       if (!user) {
         throw new Error("User not found");
@@ -96,11 +95,11 @@ export const googleCallback = async (req: Request, res: Response) => {
       userId: user.id,
       email: user.email,
     });
-
+    const ONE_DAY = 24 * 60 * 60 * 1000; //express its in ms so 1000
     res.cookie("session", token, {
       httpOnly: true,
       secure: false, // true in production (https)
-      maxAge: 7 * 24 * 60 * 60,
+      maxAge: 7 * ONE_DAY,
       // sameSite: "lax",
     });
 
@@ -216,11 +215,11 @@ export const googleUpgradeCallback = async (req: Request, res: Response) => {
   }
 };
 
-export const getMe = async (req: Request, res: Response) => {
-  const user = await getUserById(req.user.userId);
-  //NOTE:Don't send all data
-  res.json({ user });
-};
+// export const getMe = async (req: Request, res: Response) => {
+//   const user = await getSafeUserById(req.user.userId);
+//   //NOTE:Don't send all data
+//   res.json({ user });
+// };
 
 export const logout = (req: Request, res: Response) => {
   res.clearCookie("session");

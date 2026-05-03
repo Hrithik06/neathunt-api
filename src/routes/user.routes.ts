@@ -1,20 +1,10 @@
 import { Router } from "express";
-import { findOrCreateUser, getAllUsers } from "../services/user.service.js";
+import { authMiddleware } from "../middlewares/auth.middleware.js";
+import { getMe } from "../controllers/user.controller.js";
 
 const router = Router();
 
-/*
-  Temporary login endpoint.
-  Later Google OAuth will call this internally.
-*/
-router.post("/login", async (req, res) => {
-  const user = await findOrCreateUser(req.body);
-  res.json(user);
-});
-
-router.get("/", async (_, res) => {
-  const users = await getAllUsers();
-  res.json(users);
-});
+router.get("/me", authMiddleware, getMe);
+router.patch("/timezone", authMiddleware);
 
 export default router;

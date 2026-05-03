@@ -25,6 +25,11 @@ model User {
   name    String?
   picture String?
 
+  //User settings
+  //TimeZone from client
+  timezone            String  @default("UTC")
+  timezoneInitialized Boolean @default(false)
+
   // OAuth data
   scopes         String[]
   accessToken    String?   @db.Text // Can be long
@@ -41,7 +46,6 @@ model User {
   // Timestamps
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  // applications Application[]
 
   // Indexes for performance
   @@index([email])

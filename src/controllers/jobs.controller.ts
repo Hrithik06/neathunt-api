@@ -8,12 +8,13 @@ import {
 import { prisma } from "../lib/prisma.js";
 import { FilterJobQuery } from "../validators/job.validator.js";
 import { JobStatus } from "../types/jobs.js";
+import { AuthRequest } from "../types/request.js";
 type Params = {
   id: string;
 };
 
 // add new job
-export const addJob = async (req: Request, res: Response) => {
+export const addJob = async (req: AuthRequest, res: Response) => {
   const userId = req.user.userId;
   const input = req.body;
   const job = {
@@ -63,7 +64,7 @@ export const getJobs = async (
 };
 
 //seed dummy data
-export const seedJobsForUser = async (req: Request, res: Response) => {
+export const seedJobsForUser = async (req: AuthRequest, res: Response) => {
   const userId = req.user.userId;
 
   const jobs = [
@@ -103,7 +104,7 @@ export const seedJobsForUser = async (req: Request, res: Response) => {
   res.status(201).json({ message: "Dummy jobs added" });
 };
 //delete all job data
-export const deleteAllJobDataOfUser = async (req: Request, res: Response) => {
+export const deleteAllJobDataOfUser = async (req: AuthRequest, res: Response) => {
   const userId = req.user.userId;
 
   await prisma.job.deleteMany({ where: { userId } });
