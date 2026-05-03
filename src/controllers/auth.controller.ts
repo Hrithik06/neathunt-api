@@ -215,12 +215,6 @@ export const googleUpgradeCallback = async (req: Request, res: Response) => {
   }
 };
 
-// export const getMe = async (req: Request, res: Response) => {
-//   const user = await getSafeUserById(req.user.userId);
-//   //NOTE:Don't send all data
-//   res.json({ user });
-// };
-
 export const logout = (req: Request, res: Response) => {
   res.clearCookie("session");
   res.json({ success: true });

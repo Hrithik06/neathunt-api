@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import { Response } from "express";
 import {
   createJob,
   filterJobs,
@@ -28,7 +28,7 @@ export const addJob = async (req: AuthRequest, res: Response) => {
 };
 //edit job
 // do not apply defaults, only update provided fields
-export const editJob = async (req: Request<Params>, res: Response) => {
+export const editJob = async (req: AuthRequest<Params>, res: Response) => {
   const { id: jobId } = req.params;
 
   const input = req.body; // validated by Zod
@@ -38,7 +38,7 @@ export const editJob = async (req: Request<Params>, res: Response) => {
 };
 
 //soft delete
-export const deleteJob = async (req: Request<Params>, res: Response) => {
+export const deleteJob = async (req: AuthRequest<Params>, res: Response) => {
   const { id: jobId } = req.params;
   const userId = req.user.userId;
   const deletedJob = await softDeleteJob(jobId, userId);
@@ -47,7 +47,7 @@ export const deleteJob = async (req: Request<Params>, res: Response) => {
 
 //filter jobs
 export const getJobs = async (
-  req: Request<{}, {}, {}, FilterJobQuery>,
+  req: AuthRequest<{}, {}, {}, FilterJobQuery>,
   res: Response,
 ) => {
   const { company, status, source, q } = req.query;
@@ -104,7 +104,10 @@ export const seedJobsForUser = async (req: AuthRequest, res: Response) => {
   res.status(201).json({ message: "Dummy jobs added" });
 };
 //delete all job data
-export const deleteAllJobDataOfUser = async (req: AuthRequest, res: Response) => {
+export const deleteAllJobDataOfUser = async (
+  req: AuthRequest,
+  res: Response,
+) => {
   const userId = req.user.userId;
 
   await prisma.job.deleteMany({ where: { userId } });
