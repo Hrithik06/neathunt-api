@@ -255,4 +255,5 @@ export const googleUpgradeCallback = async (req: Request, res: Response) => {
 export const logout = (req: Request, res: Response) => {
   res.clearCookie("session");
   res.status(204);
+  // res.json({ h: "sdf" });
 };
