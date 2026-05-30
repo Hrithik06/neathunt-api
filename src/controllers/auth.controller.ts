@@ -252,8 +252,20 @@ export const googleUpgradeCallback = async (req: Request, res: Response) => {
   }
 };
 
+// export const logout = (req: Request, res: Response) => {
+//   res.clearCookie("session", {
+//     httpOnly: true,
+//     secure: process.env.NODE_ENV === "production", // true in production (HTTPS)
+//     sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+//   });
+//   res.status(200).json({ h: "sdf" });
+// };
 export const logout = (req: Request, res: Response) => {
-  res.clearCookie("session");
-  res.status(204);
-  // res.json({ h: "sdf" });
+  res.clearCookie("session", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+  });
+
+  res.sendStatus(204);
 };
