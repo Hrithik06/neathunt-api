@@ -20,7 +20,6 @@ export const addJob = async (req: AuthRequest, res: Response) => {
   const job = {
     ...input, // validated by Zod
     status: input.status ?? JobStatus.APPLIED, // apply defaults for missing fields
-    appliedAt: new Date(input.appliedAt), // apply defaults for missing fields
     userId, // injected by server
   };
   const jobDB = await createJob(job);
