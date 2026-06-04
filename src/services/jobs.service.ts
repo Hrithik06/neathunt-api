@@ -35,7 +35,20 @@ export async function filterJobs(filter: {
     }),
   };
 
-  return prisma.job.findMany({ where });
+  return prisma.job.findMany({
+    where,
+    select: {
+      id: true,
+      company: true,
+      title: true,
+      status: true,
+      appliedAt: true,
+      source: true,
+      notes: true,
+      url: true,
+      updatedAt: true,
+    },
+  });
   // return where;
 }
 

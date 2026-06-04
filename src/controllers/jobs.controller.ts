@@ -105,6 +105,7 @@ export const seedJobsForUser = async (req: AuthRequest, res: Response) => {
 
   res.status(201).json({ message: "Dummy jobs added" });
 };
+// DANGEROUS CODE TO BE REMOVED
 //delete all job data
 export const deleteAllJobDataOfUser = async (
   req: AuthRequest,
