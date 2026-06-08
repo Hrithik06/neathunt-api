@@ -48,6 +48,8 @@ export async function filterJobs(filter: {
       url: true,
       updatedAt: true,
     },
+    orderBy: { updatedAt: "desc" }
+    // TODO: decide on createdAt, updatedAt
   });
   // return where;
 }

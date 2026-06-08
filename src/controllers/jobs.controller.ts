@@ -23,6 +23,8 @@ export const addJob = async (req: AuthRequest, res: Response) => {
     userId, // injected by server
   };
   const jobDB = await createJob(job);
+
+  // res.status(500).json({ "error": "Error" })
   res.status(201).json(jobDB);
 };
 //edit job
@@ -57,8 +59,8 @@ export const getJobs = async (
     status,
     source,
     q,
-  });
 
+  },);
   res.json(jobs);
 };
 
