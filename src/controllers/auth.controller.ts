@@ -137,7 +137,7 @@ export const googleCallback = async (req: Request, res: Response) => {
 
     // OAuth flow complete
     // Redirect user back to frontend app
-    res.redirect(`${process.env.CLIENT_URL}`);
+    res.redirect(`${process.env.CLIENT_URL}/dashboard`);
   } catch (err) {
     console.log("googleCallback ERROR");
     console.error(err);
