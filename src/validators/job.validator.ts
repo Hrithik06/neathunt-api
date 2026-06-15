@@ -17,8 +17,8 @@ export const updateJobSchema = z.object({
   company: z.string().min(1).optional(),
   title: z.string().min(1).optional(),
   status: z.enum(JobStatus).optional(),
-  notes: z.string().optional(),
-  url: z.url().optional(),
+  notes: z.string().nullable().optional(), //recieve null from client to set null
+  url: z.url().nullable().optional(), //recieve null from client to set null
   appliedAt: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/)
