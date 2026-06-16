@@ -71,6 +71,9 @@ model Job {
   status     JobStatus @default(APPLIED)
   appliedAt  DateTime  @db.Date // ← just the date, no time, no timezone
   receivedAt DateTime? // ← Gmail timestamp, is a point in time, store UTC
+  platform   String
+  salary     String?
+  currency   Currency?
 
   // Tracking source
   source JobSource @default(MANUAL)
@@ -111,6 +114,19 @@ enum JobStatus {
 enum JobSource {
   MANUAL
   GMAIL_AUTO
+}
+
+enum Currency {
+  INR //- Indian Rupee
+  USD //- US Dollar
+  EUR //- Euro
+  GBP //- British Pound
+  CAD //- Canadian Dollar
+  AUD //- Australian Dollar
+  SGD //- Singapore Dollar
+  CHF //- Swiss Franc
+  JPY //- Japanese Yen
+  AED //- UAE Dirham
 }
 
 //In future if needed

@@ -7,7 +7,7 @@ import {
 } from "../services/jobs.service.js";
 import { prisma } from "../lib/prisma.js";
 import { FilterJobQuery } from "../validators/job.validator.js";
-import { JobStatus, JobSource } from "../types/jobs.js";
+import { JobStatus, JobSource, Currency } from "../types/jobs.js";
 import { AuthRequest } from "../types/request.js";
 type Params = {
   id: string;
@@ -75,6 +75,7 @@ export const seedJobsForUser = async (req: AuthRequest, res: Response) => {
       status: JobStatus.APPLIED,
       source: JobSource.MANUAL,
       notes: "Applied via careers page",
+      platform: "COMPANY_WEBSITE",
     },
     {
       userId,
@@ -84,6 +85,9 @@ export const seedJobsForUser = async (req: AuthRequest, res: Response) => {
       status: JobStatus.REJECTED,
       source: JobSource.MANUAL,
       notes: "Rejected after OA",
+      platform: "REFERRAL",
+      salary: "30-35LPA",
+      currency: Currency.INR,
     },
     {
       userId,
@@ -95,6 +99,7 @@ export const seedJobsForUser = async (req: AuthRequest, res: Response) => {
       emailMessageId: `msg-${userId}-demo`,
       emailThreadId: `thread-${userId}-demo`,
       emailSubject: "Your application at Amazon",
+      platform: "LINKEDIN",
     },
   ];
 

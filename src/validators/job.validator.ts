@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { JobSource, JobStatus } from "../types/jobs.js";
+import { Currency, JobSource, JobStatus } from "../types/jobs.js";
 
 export const createJobSchema = z.object({
   company: z.string().min(1),
@@ -11,6 +11,15 @@ export const createJobSchema = z.object({
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/)
     .transform((v) => new Date(v)), //Mandatory when data is coming from client not auto gmail
+
+  platform: z
+    .string()
+    .trim()
+    .min(1)
+    .max(50)
+    .transform((v) => v.replace(/\s+/g, " ")), //"Pyjama  Jobs" → "Pyjama Jobs"
+  salary: z.string().optional(),
+  currency: z.enum(Currency).optional(),
 });
 
 export const updateJobSchema = z.object({
@@ -24,6 +33,15 @@ export const updateJobSchema = z.object({
     .regex(/^\d{4}-\d{2}-\d{2}$/)
     .transform((v) => new Date(v))
     .optional(),
+  platform: z
+    .string()
+    .trim()
+    .min(1)
+    .max(50)
+    .transform((v) => v.replace(/\s+/g, " ")) //"Pyjama  Jobs" → "Pyjama Jobs"
+    .optional(),
+  salary: z.string().optional(),
+  currency: z.enum(Currency).optional(),
 });
 
 export const filterJobSchema = z.object({
