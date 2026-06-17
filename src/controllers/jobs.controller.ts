@@ -17,12 +17,12 @@ type Params = {
 export const addJob = async (req: AuthRequest, res: Response) => {
   const userId = req.user.userId;
   const input = req.body;
-  const job = {
+
+  const data = {
     ...input, // validated by Zod
-    status: input.status ?? JobStatus.APPLIED, // apply defaults for missing fields
     userId, // injected by server
   };
-  const jobDB = await createJob(job);
+  const jobDB = await createJob(data);
 
   res.status(201).json(jobDB);
 };
@@ -33,7 +33,10 @@ export const editJob = async (req: AuthRequest<Params>, res: Response) => {
 
   const input = req.body; // validated by Zod
 
-  const updatedJob = await updateJob(jobId, input);
+  const data = {
+    ...input,
+  };
+  const updatedJob = await updateJob(jobId, data);
   res.json(updatedJob);
 };
 
