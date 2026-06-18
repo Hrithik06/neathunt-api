@@ -1,108 +1,11 @@
-// import { z } from "zod";
-// import { Currency, JobSource, JobStatus } from "../types/jobs.js";
-
-// const nonEmptyString = (field: string) =>
-//   z
-//     .string({
-//       error: `${field} is required`,
-//     })
-//     .trim()
-//     .min(1, `${field} is required`);
-
-// const optionalString = z
-//   .string()
-//   .trim()
-//   .transform((v) => v || undefined)
-//   .optional();
-
-// const nullableString = z
-//   .string()
-//   .trim()
-//   .transform((v) => v || null)
-//   .nullable()
-//   .optional();
-
-// const dateString = z
-//   .string()
-//   .regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date format")
-//   .transform((v) => new Date(v));
-
-// const platformSchema = nonEmptyString("Platform")
-//   .max(50, "Platform must be at most 50 characters")
-//   .transform((v) => v.replace(/\s+/g, " "));
-
-// const validateSalaryCurrency = (
-//   data: {
-//     salary?: string | null;
-//     currency?: string | null;
-//   },
-//   ctx: z.RefinementCtx,
-// ) => {
-//   const hasSalary = !!data.salary?.trim();
-//   const hasCurrency = data.currency != null;
-
-//   if (hasSalary && !hasCurrency) {
-//     ctx.addIssue({
-//       code: "custom",
-//       path: ["currency"],
-//       message: "Currency is required when salary is provided",
-//     });
-//   }
-
-//   if (!hasSalary && hasCurrency) {
-//     ctx.addIssue({
-//       code: "custom",
-//       path: ["salary"],
-//       message: "Salary is required when currency is provided",
-//     });
-//   }
-// };
-// export const createJobSchema = z.object({
-//   company: nonEmptyString("Company"),
-//   title: nonEmptyString("Title"),
-//   status: z.enum(JobStatus).optional(),
-//   notes: optionalString,
-//   url: z.url().trim().optional(),
-//   appliedAt: dateString, //Mandatory when data is coming from client not auto gmail
-
-//   platform: platformSchema, //"Pyjama  Jobs" → "Pyjama Jobs"
-//   salary: optionalString,
-//   currency: z.enum(Currency).optional(),
-// });
-
-// export const updateJobSchema = z.object({
-//   company: nonEmptyString("Company").optional(),
-//   title: nonEmptyString("Title").optional(),
-//   status: z.enum(JobStatus).optional(),
-//   notes: nullableString, //recieve null from client to set null in db(deletes in db)
-//   url: z.url().trim().nullable().optional(), //recieve null from client to set null in db(deletes in db)
-//   appliedAt: dateString.optional(),
-//   platform: platformSchema //"Pyjama  Jobs" → "Pyjama Jobs"
-//     .optional(),
-//   salary: nullableString,
-//   currency: z.enum(Currency).nullable().optional(),
-// });
-
-// //Checking for both currency and salary
-// createJobSchema.superRefine(validateSalaryCurrency);
-// updateJobSchema.superRefine(validateSalaryCurrency);
-
-// export const filterJobSchema = z.object({
-//   company: optionalString,
-//   status: z.enum(JobStatus).optional(),
-//   source: z.enum(JobSource).optional(),
-//   q: optionalString,
-// });
-// export type FilterJobQuery = z.infer<typeof filterJobSchema>;
-
 import { z } from "zod";
 import { Currency, JobSource, JobStatus } from "../types/jobs.js";
 import { normalizePlatform } from "../utils/normalizePlatform.js";
-import { createErrorMap } from "zod-validation-error";
+// import { createErrorMap } from "zod-validation-error";
 
-z.config({
-  customError: createErrorMap(),
-});
+// z.config({
+//   customError: createErrorMap(),
+// });
 /**
  * Required non-empty string.
  *
@@ -120,72 +23,6 @@ const nonEmptyString = (field: string) =>
     })
     .trim()
     .min(1, `${field} is required`);
-
-/**
- * Optional text field.
- *
- * Server does NOT trust clients.
- *
- * Even if Postman sends:
- *
- * {
- *   notes: "      "
- * }
- *
- * this becomes:
- *
- * {
- *   notes: undefined
- * }
- *
- * Useful for:
- * - notes
- * - salary
- * - filter strings
- *
- * In CREATE:
- * undefined means:
- * -> user did not provide a value
- * -> DB stores NULL for nullable columns
- */
-const optionalString = z
-  .string()
-  .trim()
-  .transform((v) => v || undefined)
-  .optional();
-
-/**
- * Nullable text field used in UPDATE.
- *
- * UPDATE semantics:
- *
- * undefined
- * -> don't update this field
- *
- * null
- * -> explicitly remove existing value from DB
- *
- * string
- * -> update with new value
- *
- * Also protects against clients sending:
- *
- * {
- *   notes: "      "
- * }
- *
- * which becomes:
- *
- * {
- *   notes: null
- * }
- */
-const nullableString = z
-  .string()
-  .trim()
-  .transform((v) => v || null)
-  .nullable()
-  .optional();
 
 /**
  * Accept only YYYY-MM-DD.
@@ -277,11 +114,130 @@ const validateSalaryCurrency = (
   }
 };
 
+/**
+ * Optional text field.
+ *
+ * Server does NOT trust clients.
+ *
+ * Even if Postman sends:
+ *
+ * {
+ *   notes: "      "
+ * }
+ *
+ * this becomes:
+ *
+ * {
+ *   notes: undefined
+ * }
+ *
+ * Useful for:
+ * - notes
+ * - filter strings
+ *
+ * In CREATE:
+ * undefined means:
+ * -> user did not provide a value
+ * -> DB stores NULL for nullable columns
+ */
+const optionalString = z
+  .string()
+  .trim()
+  .max(1000)
+  .transform((v) => v || undefined)
+  .optional();
+
+/**
+ * Nullable text field used in UPDATE.
+ *
+ * UPDATE semantics:
+ *
+ * undefined
+ * -> don't update this field
+ *
+ * null
+ * -> explicitly remove existing value from DB
+ *
+ * string
+ * -> update with new value
+ *
+ * Also protects against clients sending:
+ *
+ * {
+ *   notes: "      "
+ * }
+ *
+ * which becomes:
+ *
+ * {
+ *   notes: null
+ * }
+ */
+const nullableString = z
+  .string()
+  .trim()
+  .max(1000)
+  .transform((v) => v || null)
+  .nullable()
+  .optional();
+
+/**
+ * Salary is intentionally flexible.
+ *
+ * Examples:
+ *
+ * 12 LPA
+ * 15-18 LPA
+ * 120k
+ * 100000
+ *
+ * Reject absurdly long inputs.
+ */
+const optionalSalary = z
+  .string()
+  .trim()
+  .max(50)
+  .transform((v) => v || undefined)
+  .optional();
+
+const nullableSalary = z
+  .string()
+  .trim()
+  .max(50)
+  .transform((v) => v || null)
+  .nullable()
+  .optional();
+
+/**
+ * Optional URL.
+ *
+ * Examples:
+ *
+ * https://linkedin.com/jobs/view/123
+ *
+ * https://wellfound.com/jobs/123
+ *
+ * Max length 500 is more than enough
+ * for job application URLs.
+ */
+const optionalUrl = z
+  .url("Invalid URL. Expected https://...")
+  .trim()
+  .max(500)
+  .optional();
+
+const nullableUrl = z
+  .url("Invalid URL. Expected https://...")
+  .trim()
+  .max(500)
+  .nullable()
+  .optional();
+
 export const createJobSchema = z
   .object({
-    company: nonEmptyString("Company"),
+    company: nonEmptyString("Company").max(100),
 
-    title: nonEmptyString("Title"),
+    title: nonEmptyString("Title").max(150),
 
     /**
      * Optional because DB has:
@@ -295,7 +251,7 @@ export const createJobSchema = z
 
     notes: optionalString,
 
-    url: z.url().trim().optional(),
+    url: optionalUrl,
 
     /**
      * Mandatory for manual jobs.
@@ -312,7 +268,7 @@ export const createJobSchema = z
      * undefined means:
      * user didn't provide salary.
      */
-    salary: optionalString,
+    salary: optionalSalary,
 
     /**
      * Optional because salary itself is optional.
@@ -337,9 +293,9 @@ export const updateJobSchema = z
      * undefined
      * -> don't update company
      */
-    company: nonEmptyString("Company").optional(),
+    company: nonEmptyString("Company").max(100).optional(),
 
-    title: nonEmptyString("Title").optional(),
+    title: nonEmptyString("Title").max(150).optional(),
 
     status: z.enum(JobStatus).optional(),
 
@@ -360,7 +316,7 @@ export const updateJobSchema = z
     /**
      * Same semantics as notes.
      */
-    url: z.url().trim().nullable().optional(),
+    url: nullableUrl,
 
     appliedAt: dateString.optional(),
 
@@ -378,7 +334,7 @@ export const updateJobSchema = z
      * string
      * -> update salary
      */
-    salary: nullableString,
+    salary: nullableSalary,
 
     /**
      * Must follow salary.
@@ -419,5 +375,4 @@ export const filterJobSchema = z.object({
 
   q: optionalString,
 });
-
 export type FilterJobQuery = z.infer<typeof filterJobSchema>;
