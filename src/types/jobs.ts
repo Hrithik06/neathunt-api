@@ -2,6 +2,7 @@ import {
   Prisma,
   JobStatus,
   JobSource,
+  Currency,
   Job,
 } from "../generated/prisma/client.js";
 
@@ -19,6 +20,9 @@ export type CreateJobInput = {
   company: string;
   title: string;
   appliedAt: string;
+  platform: string;
+  salary?: string;
+  currency?: Currency;
   status?: JobStatus;
   notes?: string;
   url?: string;
@@ -33,6 +37,9 @@ export type UpdateJobInput = {
   notes?: string;
   url?: string;
   appliedAt?: string;
+  platform?: string;
+  salary?: string;
+  currency?: Currency;
 };
 
 // ===== SERVICE TYPES service layer=====
@@ -44,7 +51,7 @@ export type CreateJobServiceInput = CreateJobInput & {
 
 // ===== RE-EXPORTS =====
 // Keep Prisma as source of truth for enums
-export { JobStatus, JobSource };
+export { JobStatus, JobSource, Currency };
 
 // Represents DB row (used in responses)
 export type { Job };

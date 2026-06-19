@@ -66,11 +66,14 @@ model Job {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // Job details
-  company    String
-  title      String
+  company    String    @db.VarChar(100)
+  title      String    @db.VarChar(150)
   status     JobStatus @default(APPLIED)
   appliedAt  DateTime  @db.Date // ← just the date, no time, no timezone
   receivedAt DateTime? // ← Gmail timestamp, is a point in time, store UTC
+  platform   String
+  salary     String?
+  currency   Currency?
 
   // Tracking source
   source JobSource @default(MANUAL)
@@ -81,8 +84,8 @@ model Job {
   emailSubject   String?
 
   // Additional fields
-  notes String? @db.Text
-  url   String? // Job posting URL
+  notes String? @db.Text //doesnt take limit
+  url   String? @db.VarChar(500) // Job posting URL
 
   // Timestamps
   createdAt DateTime  @default(now())
@@ -111,6 +114,19 @@ enum JobStatus {
 enum JobSource {
   MANUAL
   GMAIL_AUTO
+}
+
+enum Currency {
+  INR //- Indian Rupee
+  USD //- US Dollar
+  EUR //- Euro
+  GBP //- British Pound
+  CAD //- Canadian Dollar
+  AUD //- Australian Dollar
+  SGD //- Singapore Dollar
+  CHF //- Swiss Franc
+  JPY //- Japanese Yen
+  AED //- UAE Dirham
 }
 
 //In future if needed

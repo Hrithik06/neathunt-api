@@ -47,8 +47,11 @@ export async function filterJobs(filter: {
       notes: true,
       url: true,
       updatedAt: true,
+      platform: true,
+      salary: true,
+      currency: true,
     },
-    orderBy: { updatedAt: "desc" }
+    orderBy: { updatedAt: "desc" },
     // TODO: decide on createdAt, updatedAt
   });
   // return where;

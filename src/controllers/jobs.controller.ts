@@ -7,7 +7,7 @@ import {
 } from "../services/jobs.service.js";
 import { prisma } from "../lib/prisma.js";
 import { FilterJobQuery } from "../validators/job.validator.js";
-import { JobStatus, JobSource } from "../types/jobs.js";
+import { JobStatus, JobSource, Currency } from "../types/jobs.js";
 import { AuthRequest } from "../types/request.js";
 type Params = {
   id: string;
@@ -17,12 +17,12 @@ type Params = {
 export const addJob = async (req: AuthRequest, res: Response) => {
   const userId = req.user.userId;
   const input = req.body;
-  const job = {
+
+  const data = {
     ...input, // validated by Zod
-    status: input.status ?? JobStatus.APPLIED, // apply defaults for missing fields
     userId, // injected by server
   };
-  const jobDB = await createJob(job);
+  const jobDB = await createJob(data);
 
   res.status(201).json(jobDB);
 };
@@ -33,7 +33,10 @@ export const editJob = async (req: AuthRequest<Params>, res: Response) => {
 
   const input = req.body; // validated by Zod
 
-  const updatedJob = await updateJob(jobId, input);
+  const data = {
+    ...input,
+  };
+  const updatedJob = await updateJob(jobId, data);
   res.json(updatedJob);
 };
 
@@ -75,6 +78,7 @@ export const seedJobsForUser = async (req: AuthRequest, res: Response) => {
       status: JobStatus.APPLIED,
       source: JobSource.MANUAL,
       notes: "Applied via careers page",
+      platform: "COMPANY_WEBSITE",
     },
     {
       userId,
@@ -84,6 +88,9 @@ export const seedJobsForUser = async (req: AuthRequest, res: Response) => {
       status: JobStatus.REJECTED,
       source: JobSource.MANUAL,
       notes: "Rejected after OA",
+      platform: "REFERRAL",
+      salary: "30-35LPA",
+      currency: Currency.INR,
     },
     {
       userId,
@@ -95,6 +102,7 @@ export const seedJobsForUser = async (req: AuthRequest, res: Response) => {
       emailMessageId: `msg-${userId}-demo`,
       emailThreadId: `thread-${userId}-demo`,
       emailSubject: "Your application at Amazon",
+      platform: "LINKEDIN",
     },
   ];
 
