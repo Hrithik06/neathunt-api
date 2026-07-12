@@ -25,6 +25,8 @@ const GMAIL_SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"];
 
 const ALL_SCOPES = [...BASE_SCOPES, ...GMAIL_SCOPES];
 
+const ONE_DAY = 24 * 60 * 60 * 1000;
+
 // Starts Google OAuth flow
 // If user already has a valid session cookie,
 // skip Google login and send them directly to dashboard
@@ -101,7 +103,6 @@ export const googleCallback = async (req: Request, res: Response) => {
     if (!data.id || !data.email || !data.name || !data.picture) {
       throw new Error("Missing data in OAuth callback");
     }
-    console.log("google data: ", data);
     // Normalize Google profile data for app
     const profile = {
       googleId: data.id,
@@ -124,7 +125,6 @@ export const googleCallback = async (req: Request, res: Response) => {
       email: user.email,
     });
 
-    const ONE_DAY = 24 * 60 * 60 * 1000;
 
     // Store JWT in secure HTTP-only cookie
     // Browser automatically sends this cookie in future requests
@@ -174,7 +174,7 @@ export const googleUpgradeCallback = async (req: Request, res: Response) => {
   try {
     const code = req.query.code as string;
     const state = JSON.parse(req.query.state as string);
-    console.log(state);
+
     const oauth2Client = getOAuthClient();
 
     const { tokens } = await oauth2Client.getToken({
