@@ -41,7 +41,7 @@ export async function updateScopes(userId: string, scopes: string[]) {
   return prisma.user.update({
     where: { id: userId },
     data: {
-      scopes: mergedScopes,
+      googleScopes: mergedScopes,
     },
   });
 }
