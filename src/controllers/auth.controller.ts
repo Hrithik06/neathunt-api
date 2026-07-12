@@ -2,17 +2,11 @@ import { Request, Response } from "express";
 
 import { getOAuthClient } from "../config/googleOAuth.js";
 import { checkScopes } from "../utils/checkScopes.js";
-import {
-  enableAutomaticTracking,
-  findOrCreateUser,
-  getSafeUserById,
-  getUserByGoogleId,
-  saveGmailTokens,
-  updateScopes,
-} from "../services/user.service.js";
+
+import * as userService from "../services/user.service.js";
+import * as jwtService from "../services/jwt.service.js";
 
 import { hasFullGmailTokens } from "../utils/hasFullGmailTokens.js";
-import { signToken, verifyToken } from "../services/jwt.service.js";
 import { JwtPayload } from "../types/auth.js";
 
 const BASE_SCOPES = [
@@ -27,6 +21,9 @@ const ALL_SCOPES = [...BASE_SCOPES, ...GMAIL_SCOPES];
 
 const ONE_DAY = 24 * 60 * 60 * 1000;
 
+
+
+
 // Starts Google OAuth flow
 // If user already has a valid session cookie,
 // skip Google login and send them directly to dashboard
@@ -36,11 +33,11 @@ export const googleAuth = async (req: Request, res: Response) => {
   // Check existing login session
   if (token) {
     try {
-      const decoded = verifyToken(token) as JwtPayload;
+      const decoded = jwtService.verifyToken(token) as JwtPayload;
 
       // Extra safety:
       // token may still be valid even if user was deleted from DB
-      const user = await getSafeUserById(decoded.userId);
+      const user = await userService.getSafeUserById(decoded.userId);
 
       if (!user) {
         throw new Error("User not found");
@@ -116,11 +113,11 @@ export const googleCallback = async (req: Request, res: Response) => {
 
     // Create user if first login
     // otherwise return existing user
-    const user = await findOrCreateUser(profile);
+    const user = await userService.findOrCreateUser(profile);
 
     // Create app session JWT
     // After this, app trusts its own token instead of Google token
-    const token = signToken({
+    const token = jwtService.signToken({
       userId: user.id,
       email: user.email,
     });
@@ -223,15 +220,15 @@ export const googleUpgradeCallback = async (req: Request, res: Response) => {
     if (!googleId) {
       throw new Error("Missing googleId in OAuth callback");
     }
-    const user = await getUserByGoogleId(googleId);
+    const user = await userService.getUserByGoogleId(googleId);
     if (!user) {
       throw new Error("User not found");
     }
-    await updateScopes(user.id, grantedScopes);
-    await enableAutomaticTracking(user.id);
+    await userService.updateScopes(user.id, grantedScopes);
+    await userService.enableAutomaticTracking(user.id);
 
     if (hasFullGmailTokens(tokens) && googleId) {
-      await saveGmailTokens(
+      await userService.saveGmailTokens(
         user.id,
         tokens.access_token,
         tokens.refresh_token,

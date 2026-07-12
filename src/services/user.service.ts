@@ -1,3 +1,4 @@
+import { tr } from "zod/v4/locales";
 import { prisma } from "../lib/prisma.js";
 import { CreateUserInput, UpdateUserInput } from "../types/user.js";
 
@@ -73,6 +74,14 @@ export async function getUserByGoogleId(googleId: string) {
   });
 }
 
+export async function getGoogleTokens(userId: string) {
+  return prisma.user.findUnique({
+    where: { id: userId }, select: {
+      refreshToken: true,
+      accessToken: true,
+    }
+  })
+}
 export async function getFullUserById(userId: string) {
   return prisma.user.findUnique({
     where: { id: userId },

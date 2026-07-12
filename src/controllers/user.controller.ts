@@ -1,9 +1,11 @@
 import { Response } from "express";
-import { getSafeUserById, updateUser } from "../services/user.service.js";
+// import { getSafeUserById, updateUser } from "../services/user.service.js";
+import * as userService from "../services/user.service.js";
+
 import { AuthRequest } from "../types/request.js";
 
 export const getMe = async (req: AuthRequest, res: Response) => {
-  const user = await getSafeUserById(req.user.userId);
+  const user = await userService.getSafeUserById(req.user.userId);
   //NOTE:Don't send all data
   res.json(user);
 };

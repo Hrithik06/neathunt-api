@@ -1,9 +1,9 @@
 import { Router } from "express";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
-import * as userController from "../controllers/user.controller.js";
+import * as gmailController from "../controllers/gmail.controller.js";
 
 const router = Router();
 
-router.get("/me", authMiddleware, userController.getMe);
+router.get("/sync", authMiddleware,gmailController.syncMyGmail);
 
 export default router;

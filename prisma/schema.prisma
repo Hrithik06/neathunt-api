@@ -33,10 +33,18 @@ model User {
   timezoneInitialized Boolean @default(false)
 
   // OAuth data
-  scopes         String[]
   accessToken    String?   @db.Text // Can be long
   refreshToken   String?   @db.Text // Can be long
   tokenExpiresAt DateTime?
+
+  //gmail related data
+  gmailConnected  Boolean
+  gmailScopes  String[]
+  gmailConnectedAt  DateTime?
+  gmailLastSyncedAt  DateTime?
+  gmailReconnectRequired  Boolean
+
+
 
   // Feature flags (embedded, not separate table!)
   manualTracking    Boolean @default(true) // Always enabled

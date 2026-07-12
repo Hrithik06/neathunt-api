@@ -3,7 +3,7 @@
 // import { normalizeMetadataMessage } from "../utils/gmail.utils.js";
 // import { GmailClient, GmailMessage } from "../types/gmail.js";
 // import { gmailQuery } from "../constants/gmailFilters.js";
-// import { getFormattedDate, isDefined, isFulfilled } from "../utils/helper.js";
+import { getFormattedDate, isDefined, isFulfilled } from "../utils/helper.js";
 // import { GaxiosResponse } from "gaxios";
 // export async function exchangeCodeForTokens(code: string) {
 //   const oauth2Client = getOAuthClient();
@@ -137,3 +137,71 @@
 //     return null;
 //   }
 // }
+
+
+import { google, gmail_v1 } from "googleapis";
+import { GaxiosError } from "gaxios";
+import { getGoogleTokens } from './user.service.js';
+import getAuthenticatedClient from '../utils/getAuthenticatedClient.js';
+
+function isInvalidGrant(error: unknown): boolean {
+  return (
+    error instanceof GaxiosError &&
+    error.response?.data?.error === "invalid_grant"
+  );
+}
+export async function syncJobApplications(userId:string) {
+
+  try {
+    const tokensFromDb = await getGoogleTokens(userId)
+   const authenticatedClient = getAuthenticatedClient(tokensFromDb)
+
+   const gmailClient: gmail_v1.Gmail = google.gmail({
+     version: "v1",
+     auth: authenticatedClient,
+   });
+
+    const data = await gmailClient.users.getProfile({
+      userId: "me"
+    })
+
+    return data
+  } catch (error) {
+    if (isInvalidGrant(error)) {
+      // await disconnectGmail(userId);
+      return;
+    }
+
+    throw error;
+}
+}
+
+
+export async function listMessageIds(gmailAPI: gmail_v1.Gmail, maxResults = 500) {
+  try {
+    //get first 10 message ids
+    const today = new Date();
+    const priorDate = new Date(new Date().setDate(today.getDate() - 30));
+
+    const formattedAfterDate = getFormattedDate(priorDate);
+    console.log(today);
+    console.log(priorDate);
+    console.log(formattedAfterDate);
+    const messageListResponse = await gmailAPI.users.messages.list({
+      userId: "me",
+      maxResults: maxResults,
+      // q: gmailQuery.replace(/[\r\n]+/gm, "")
+      // q: `after:${formattedAfterDate}`
+      q: `after:2026/02/07`,
+    });
+
+    return messageListResponse;
+  } catch (error) {
+    if (error instanceof Error) {
+      console.error("listMessageIds Error:", error.message);
+    } else {
+      console.error("listMessageIds Error:", error);
+    }
+    return null;
+  }
+}

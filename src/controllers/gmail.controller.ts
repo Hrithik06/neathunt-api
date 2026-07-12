@@ -17,6 +17,9 @@
 // //     return;
 // //   }
 
+import { Response } from "express";
+import { AuthRequest } from "../types/request.js";
+
 // //   const { refreshToken, accessToken } = user;
 // //   if (!refreshToken) {
 // //     res.status(500).send("Missing Refresh token of User in DB");
@@ -53,3 +56,14 @@
 
 //   res.send(message);
 // }
+
+
+import * as gmailService from "../services/gmail.service.js";
+export async function syncMyGmail(req: AuthRequest, res: Response) {
+ const data =  await gmailService.syncJobApplications(req.user.userId);
+
+  res.status(200).json({
+    message: "Gmail synced successfully",
+    data
+  });
+}
