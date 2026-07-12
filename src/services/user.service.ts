@@ -1,6 +1,7 @@
 import { tr } from "zod/v4/locales";
 import { prisma } from "../lib/prisma.js";
 import { CreateUserInput, UpdateUserInput } from "../types/user.js";
+import { checkPrimeSync } from "crypto";
 
 /*
   Idempotent login:
@@ -26,7 +27,7 @@ export async function updateScopes(userId: string, scopes: string[]) {
   // fetch only what we need
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { scopes: true },
+    select: { googleScopes: true },
   });
 
   if (!user) {
@@ -34,7 +35,7 @@ export async function updateScopes(userId: string, scopes: string[]) {
   }
 
   const mergedScopes = Array.from(
-    new Set([...(user.scopes ?? []), ...(scopes ?? [])]),
+    new Set([...(user.googleScopes ?? []), ...(scopes ?? [])]),
   );
 
   return prisma.user.update({
@@ -48,11 +49,25 @@ export async function updateScopes(userId: string, scopes: string[]) {
 export async function enableAutomaticTracking(userId: string) {
   return prisma.user.update({
     where: { id: userId },
-    data: { automaticTracking: true },
+    data: {
+      automaticTracking: true,
+      gmailConnected: true,
+      gmailConnectedAt: new Date()
+    },
   });
 }
-
-export async function saveGmailTokens(
+export async function disconnectGmail(userId: string){
+  return prisma.user.update({
+    where: { id: userId },
+    data: {
+      gmailConnected: false,
+      accessToken: null,
+      refreshToken: null,
+      tokenExpiresAt:null
+    }
+  })
+}
+export async function saveGoogleTokens(
   userId: string,
   accessToken: string,
   refreshToken: string,

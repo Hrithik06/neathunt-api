@@ -141,7 +141,7 @@ import { getFormattedDate, isDefined, isFulfilled } from "../utils/helper.js";
 
 import { google, gmail_v1 } from "googleapis";
 import { GaxiosError } from "gaxios";
-import { getGoogleTokens } from './user.service.js';
+import { disconnectGmail, getGoogleTokens } from './user.service.js';
 import getAuthenticatedClient from '../utils/getAuthenticatedClient.js';
 
 function isInvalidGrant(error: unknown): boolean {
@@ -154,6 +154,7 @@ export async function syncJobApplications(userId:string) {
 
   try {
     const tokensFromDb = await getGoogleTokens(userId)
+
    const authenticatedClient = getAuthenticatedClient(tokensFromDb)
 
    const gmailClient: gmail_v1.Gmail = google.gmail({
@@ -168,7 +169,7 @@ export async function syncJobApplications(userId:string) {
     return data
   } catch (error) {
     if (isInvalidGrant(error)) {
-      // await disconnectGmail(userId);
+      await disconnectGmail(userId);
       return;
     }
 

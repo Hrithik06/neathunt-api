@@ -106,7 +106,7 @@ export const googleCallback = async (req: Request, res: Response) => {
       email: data.email,
       name: data.name,
       picture: data.picture,
-      scopes: grantedScopes,
+      googleScopes: grantedScopes,
       givenName: data.given_name,
       familyName: data.family_name,
     };
@@ -228,7 +228,7 @@ export const googleUpgradeCallback = async (req: Request, res: Response) => {
     await userService.enableAutomaticTracking(user.id);
 
     if (hasFullGmailTokens(tokens) && googleId) {
-      await userService.saveGmailTokens(
+      await userService.saveGoogleTokens(
         user.id,
         tokens.access_token,
         tokens.refresh_token,

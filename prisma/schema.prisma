@@ -38,16 +38,13 @@ model User {
   tokenExpiresAt DateTime?
 
   //gmail related data
-  gmailConnected  Boolean
-  gmailScopes  String[]
-  gmailConnectedAt  DateTime?
-  gmailLastSyncedAt  DateTime?
-  gmailReconnectRequired  Boolean
-
+  gmailConnected      Boolean   @default(false)
+  googleScopes        String[]
+  gmailConnectedAt    DateTime?
+  gmailLastSyncedAt   DateTime?
 
 
   // Feature flags (embedded, not separate table!)
-  manualTracking    Boolean @default(true) // Always enabled
   automaticTracking Boolean @default(false) // Enabled when Gmail scope granted
 
   // Optional enhancements

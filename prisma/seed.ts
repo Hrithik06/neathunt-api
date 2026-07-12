@@ -71,14 +71,14 @@ async function main() {
       email: "alice.demo@gmail.com",
       name: "Alice Demo",
       picture: "https://i.pravatar.cc/150?img=1",
-      scopes: ["openid", "email", "profile"],
+      googleScopes: ["openid", "email", "profile"],
     },
     {
       googleId: "google-demo-2",
       email: "bob.demo@gmail.com",
       name: "Bob Demo",
       picture: "https://i.pravatar.cc/150?img=2",
-      scopes: [
+      googleScopes: [
         "openid",
         "email",
         "profile",
@@ -91,7 +91,7 @@ async function main() {
       email: "charlie.demo@gmail.com",
       name: "Charlie Demo",
       picture: "https://i.pravatar.cc/150?img=3",
-      scopes: ["openid", "email", "profile"],
+      googleScopes: ["openid", "email", "profile"],
     },
   ];
 
