@@ -144,6 +144,13 @@ import { GaxiosError } from "gaxios";
 import { disconnectGmail, getGoogleTokens } from './user.service.js';
 import getAuthenticatedClient from '../utils/getAuthenticatedClient.js';
 import { GmailClient } from "../types/gmail.js";
+import {
+  JOB_PLATFORM_SENDERS,
+  COMPANY_RECRUITING_PREFIXES,
+  SCHEDULING_PLATFORMS,
+  NEGATIVE_KEYWORDS,
+  NEGATIVE_SENDERS,
+} from "../constants/gmailFilters.js";
 
 function isInvalidGrant(error: unknown): boolean {
   return (
@@ -151,7 +158,7 @@ function isInvalidGrant(error: unknown): boolean {
     error.response?.data?.error === "invalid_grant"
   );
 }
-export async function syncJobApplications(userId:string) {
+export async function intiialSyncJobApplications(userId:string) {
 
   try {
     const tokensFromDb = await getGoogleTokens(userId)
@@ -167,7 +174,10 @@ export async function syncJobApplications(userId:string) {
       userId: "me"
     })
 
+
+
     // return data
+    // return buildInitialSyncQuery()
 
     const messageIds = await listMessageIds(gmailClient)
 return messageIds
@@ -197,8 +207,10 @@ export async function listMessageIds(gmailClient: GmailClient, maxResults = 500)
       maxResults: maxResults,
       // q: gmailQuery.replace(/[\r\n]+/gm, "")
       // q: `after:${formattedAfterDate}`
-      q:"subject:session tokens"
+      // q:"subject:session tokens"
       // q: `after:2026/02/07`,
+      // q: `after:today`,
+      q:buildInitialSyncQuery()
     });
 
     return messageListResponse;
@@ -210,4 +222,85 @@ export async function listMessageIds(gmailClient: GmailClient, maxResults = 500)
     }
     return null;
   }
+}
+
+
+// utils/gmailQuery.ts
+
+
+
+/**
+ * Build initial sync query: last 30 days of job-related emails
+ * Focuses on high-confidence signals (known platforms, recruiting addresses)
+ */
+export function buildInitialSyncQuery(): string {
+  // All "from:" clauses
+  const fromClauses = [
+    ...JOB_PLATFORM_SENDERS.map(domain => `from:${domain}`),
+    ...COMPANY_RECRUITING_PREFIXES.map(prefix => `from:${prefix}`),
+    ...SCHEDULING_PLATFORMS.map(domain => `from:${domain}`),
+  ];
+
+  // Exclude noise
+  const negativeFilter = NEGATIVE_KEYWORDS
+    .map(kw => `-subject:${kw}`)
+    .join(' ');
+
+  return `category:primary
+    newer_than:30d
+    (${fromClauses.join(' OR ')})
+    ${negativeFilter}
+  `.trim();
+}
+
+/**
+ * Build nightly sync query: today's emails only
+ * Runs every night to catch new applications, interviews, rejections
+ */
+export function buildNightlySyncQuery(): string {
+  const today = new Date().toISOString().split('T')[0];
+
+  const fromClauses = [
+    ...JOB_PLATFORM_SENDERS.map(domain => `from:${domain}`),
+    ...COMPANY_RECRUITING_PREFIXES.map(prefix => `from:${prefix}`),
+    ...SCHEDULING_PLATFORMS.map(domain => `from:${domain}`),
+  ];
+
+  const negativeFilter = NEGATIVE_KEYWORDS
+    .map(kw => `-subject:${kw}`)
+    .join(' ');
+  const negativeFromFilter = NEGATIVE_SENDERS
+    .map(kw => `-from:${kw}`);
+
+  return `
+    category:primary    after:${today}
+    (${fromClauses.join(' OR ')})    ${negativeFilter}    ${negativeFromFilter.join(' OR ')}
+  `.trim();
+}
+
+/**
+ * Build fallback query when historyId expires
+ * Same as initial, but only fetches emails we haven't already parsed
+ */
+export function buildResyncQuery(lastSyncTimestamp: Date): string {
+  const fromDate = new Date(lastSyncTimestamp);
+  fromDate.setDate(fromDate.getDate() - 1); // 1 day buffer for safety
+  const dateStr = fromDate.toISOString().split('T')[0];
+
+  const fromClauses = [
+    ...JOB_PLATFORM_SENDERS.map(domain => `from:${domain}`),
+    ...COMPANY_RECRUITING_PREFIXES.map(prefix => `from:${prefix}`),
+    ...SCHEDULING_PLATFORMS.map(domain => `from:${domain}`),
+  ];
+
+  const negativeFilter = NEGATIVE_KEYWORDS
+    .map(kw => `-subject:${kw}`)
+    .join(' ');
+
+  return `
+    category:primary
+    after:${dateStr}
+    (${fromClauses.join(' OR ')})
+    ${negativeFilter}
+  `.trim();
 }

@@ -115,6 +115,10 @@ export const NEGATIVE_KEYWORDS = [
     "sale",
     "discount"
 ]
+
+export const NEGATIVE_SENDERS = [
+  "naukrialerts@naukri.com"
+]
 export const COMPANY_RECRUITING_PREFIXES = [
     "careers@",
     "jobs@",
@@ -139,6 +143,8 @@ export const stageKeywords = {
     rejected: REJECTION_KEYWORDS,
     offer: OFFER_KEYWORDS
 }
+
+
 
 export const gmailQuery = `
 category:primary newer_than:30d (

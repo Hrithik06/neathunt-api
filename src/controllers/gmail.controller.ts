@@ -60,7 +60,7 @@ import { AuthRequest } from "../types/request.js";
 
 import * as gmailService from "../services/gmail.service.js";
 export async function syncMyGmail(req: AuthRequest, res: Response) {
- const data =  await gmailService.syncJobApplications(req.user.userId);
+ const data =  await gmailService.intiialSyncJobApplications(req.user.userId);
 
   res.status(200).json({
     message: "Gmail synced successfully",
