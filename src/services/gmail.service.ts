@@ -17,7 +17,7 @@ import { getFormattedDate, isDefined, isFulfilled } from "../utils/helper.js";
 // //   return tokens.scope?.split(" ") ?? [];
 // // }
 
-// export async function listMessageIds(gmailAPI: GmailClient, maxResults = 500) {
+// export async function listMessageIds(gmailClient: GmailClient, maxResults = 500) {
 //   try {
 //     //get first 10 message ids
 //     const today = new Date();
@@ -27,7 +27,7 @@ import { getFormattedDate, isDefined, isFulfilled } from "../utils/helper.js";
 //     console.log(today);
 //     console.log(priorDate);
 //     console.log(formattedAfterDate);
-//     const messageListResponse = await gmailAPI.users.messages.list({
+//     const messageListResponse = await gmailClient.users.messages.list({
 //       userId: "me",
 //       maxResults: maxResults,
 //       // q: gmailQuery.replace(/[\r\n]+/gm, "")
@@ -47,11 +47,11 @@ import { getFormattedDate, isDefined, isFulfilled } from "../utils/helper.js";
 // }
 // async function fetchMessageById(
 //   id: string,
-//   gmailAPI: GmailClient,
+//   gmailClient: GmailClient,
 //   format: "metadata" | "full",
 // ): Promise<GmailMessage | null> {
 //   try {
-//     const messageResponse = await gmailAPI.users.messages.get({
+//     const messageResponse = await gmailClient.users.messages.get({
 //       id,
 //       userId: "me",
 //       format,
@@ -70,19 +70,19 @@ import { getFormattedDate, isDefined, isFulfilled } from "../utils/helper.js";
 
 // export async function fetchMetadataMessageById(
 //   id: string | null | undefined,
-//   gmailAPI: GmailClient,
+//   gmailClient: GmailClient,
 // ): Promise<GmailMessage | null> {
 //   if (!id) return null;
 
-//   return fetchMessageById(id, gmailAPI, "metadata");
+//   return fetchMessageById(id, gmailClient, "metadata");
 // }
 
 // export async function fetchFullMessageById(
 //   id: string | null | undefined,
-//   gmailAPI: GmailClient,
+//   gmailClient: GmailClient,
 // ): Promise<GmailMessage | null> {
 //   if (!id) return null;
-//   return fetchMessageById(id, gmailAPI, "full");
+//   return fetchMessageById(id, gmailClient, "full");
 // }
 
 // export async function fetchEmails(refreshToken: string, accessToken: string) {
@@ -94,17 +94,17 @@ import { getFormattedDate, isDefined, isFulfilled } from "../utils/helper.js";
 //       // Optional: expiry_date: 123456789 (timestamp in ms)
 //     });
 
-//     // const gmailAPI = google.gmail({ version: "v1", auth: oauth2Client });
-//     const gmailAPI = gmail({ version: "v1", auth: oauth2Client });
+//     // const gmailClient = google.gmail({ version: "v1", auth: oauth2Client });
+//     const gmailClient = gmail({ version: "v1", auth: oauth2Client });
 
 //     //"??" guard against if messageIds is null/empty (empty inbox)
-//     const messageIds = await listMessageIds(gmailAPI).then(
+//     const messageIds = await listMessageIds(gmailClient).then(
 //       (res) => res?.data.messages ?? [],
 //     );
 
 //     //Use allSettled to fetch what you can, skip what fails
 //     const results = await Promise.allSettled(
-//       messageIds.map((msgRef) => fetchMetadataMessageById(msgRef.id, gmailAPI)),
+//       messageIds.map((msgRef) => fetchMetadataMessageById(msgRef.id, gmailClient)),
 //     );
 
 //     const rawMessages = results
@@ -139,10 +139,11 @@ import { getFormattedDate, isDefined, isFulfilled } from "../utils/helper.js";
 // }
 
 
-import { google, gmail_v1 } from "googleapis";
+import { google } from "googleapis";
 import { GaxiosError } from "gaxios";
 import { disconnectGmail, getGoogleTokens } from './user.service.js';
 import getAuthenticatedClient from '../utils/getAuthenticatedClient.js';
+import { GmailClient } from "../types/gmail.js";
 
 function isInvalidGrant(error: unknown): boolean {
   return (
@@ -157,7 +158,7 @@ export async function syncJobApplications(userId:string) {
 
    const authenticatedClient = getAuthenticatedClient(tokensFromDb)
 
-   const gmailClient: gmail_v1.Gmail = google.gmail({
+   const gmailClient:GmailClient = google.gmail({
      version: "v1",
      auth: authenticatedClient,
    });
@@ -166,7 +167,10 @@ export async function syncJobApplications(userId:string) {
       userId: "me"
     })
 
-    return data
+    // return data
+
+    const messageIds = await listMessageIds(gmailClient)
+return messageIds
   } catch (error) {
     if (isInvalidGrant(error)) {
       await disconnectGmail(userId);
@@ -178,7 +182,7 @@ export async function syncJobApplications(userId:string) {
 }
 
 
-export async function listMessageIds(gmailAPI: gmail_v1.Gmail, maxResults = 500) {
+export async function listMessageIds(gmailClient: GmailClient, maxResults = 500) {
   try {
     //get first 10 message ids
     const today = new Date();
@@ -188,12 +192,13 @@ export async function listMessageIds(gmailAPI: gmail_v1.Gmail, maxResults = 500)
     console.log(today);
     console.log(priorDate);
     console.log(formattedAfterDate);
-    const messageListResponse = await gmailAPI.users.messages.list({
+    const messageListResponse = await gmailClient.users.messages.list({
       userId: "me",
       maxResults: maxResults,
       // q: gmailQuery.replace(/[\r\n]+/gm, "")
       // q: `after:${formattedAfterDate}`
-      q: `after:2026/02/07`,
+      q:"subject:session tokens"
+      // q: `after:2026/02/07`,
     });
 
     return messageListResponse;

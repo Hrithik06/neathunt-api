@@ -1,3 +1,5 @@
+
+
 export function checkScopes(
   grantedScopes: string[],
   requiredScopes: string[],

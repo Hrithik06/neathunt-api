@@ -8,20 +8,11 @@ import * as jwtService from "../services/jwt.service.js";
 
 import { hasFullGmailTokens } from "../utils/hasFullGmailTokens.js";
 import { JwtPayload } from "../types/auth.js";
+import { BASE_SCOPES, GMAIL_READONLY_SCOPES } from "../constants/googleScopes.js";
 
-const BASE_SCOPES = [
-  "https://www.googleapis.com/auth/userinfo.profile",
-  "https://www.googleapis.com/auth/userinfo.email",
-  "openid",
-];
-
-const GMAIL_SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"];
-
-const ALL_SCOPES = [...BASE_SCOPES, ...GMAIL_SCOPES];
+const ALL_SCOPES = [...BASE_SCOPES, ...GMAIL_READONLY_SCOPES];
 
 const ONE_DAY = 24 * 60 * 60 * 1000;
-
-
 
 
 // Starts Google OAuth flow
@@ -197,7 +188,7 @@ export const googleUpgradeCallback = async (req: Request, res: Response) => {
     }
     const grantedScopes = tokens?.scope.split(" ") || [];
 
-    const hasGmailScope = checkScopes(grantedScopes, GMAIL_SCOPES);
+    const hasGmailScope = checkScopes(grantedScopes, GMAIL_READONLY_SCOPES);
 
     if (!hasGmailScope) {
       // User denied the scope
