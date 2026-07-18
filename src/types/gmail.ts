@@ -7,7 +7,7 @@ export type GmailMessage = gmail_v1.Schema$Message;
 export type GmailMessagePart = gmail_v1.Schema$MessagePart;
 
 export type GmailMessagePartHeader = gmail_v1.Schema$MessagePartHeader;
-
+// export type ListMessagesResponse = gmail_v1.Schema$ListMessagesResponse
 export type ExtractedBodyPart = {
     rawBody: string
     mimeType: string

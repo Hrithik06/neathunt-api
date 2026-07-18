@@ -4,6 +4,21 @@
 // import { GmailClient, GmailMessage } from "../types/gmail.js";
 // import { gmailQuery } from "../constants/gmailFilters.js";
 import { getFormattedDate, isDefined, isFulfilled } from "../utils/helper.js";
+
+
+import { google } from "googleapis";
+import { GaxiosError } from "gaxios";
+import { disconnectGmail, getGoogleTokens } from "./user.service.js";
+import getAuthenticatedClient from "../utils/getAuthenticatedClient.js";
+import {
+  GmailClient,
+  GmailMessage,
+} from "../types/gmail.js";
+import { buildInitialSyncQuery } from "../utils/gmailQuery.js";
+
+
+
+
 // import { GaxiosResponse } from "gaxios";
 // export async function exchangeCodeForTokens(code: string) {
 //   const oauth2Client = getOAuthClient();
@@ -45,37 +60,37 @@ import { getFormattedDate, isDefined, isFulfilled } from "../utils/helper.js";
 //     return null;
 //   }
 // }
-// async function fetchMessageById(
-//   id: string,
-//   gmailClient: GmailClient,
-//   format: "metadata" | "full",
-// ): Promise<GmailMessage | null> {
-//   try {
-//     const messageResponse = await gmailClient.users.messages.get({
-//       id,
-//       userId: "me",
-//       format,
-//       metadataHeaders: ["Date", "Subject", "From", "Reply-To"],
-//     });
-//     return messageResponse.data;
-//   } catch (error) {
-//     if (error instanceof Error) {
-//       console.error(`fetchMessageById (${format}) Error:`, error.message);
-//     } else {
-//       console.error(`fetchMessageById (${format}) Error:`, error);
-//     }
-//     return null;
-//   }
-// }
+async function fetchMessageById(
+  id: string,
+  gmailClient: GmailClient,
+  format: "metadata" | "full",
+): Promise<GmailMessage | null> {
+  try {
+    const messageResponse = await gmailClient.users.messages.get({
+      id,
+      userId: "me",
+      format,
+      metadataHeaders: ["Date", "Subject", "From", "Reply-To"],
+    });
+    return messageResponse.data;
+  } catch (error) {
+    if (error instanceof Error) {
+      console.error(`fetchMessageById (${format}) Error:`, error.message);
+    } else {
+      console.error(`fetchMessageById (${format}) Error:`, error);
+    }
+    return null;
+  }
+}
 
-// export async function fetchMetadataMessageById(
-//   id: string | null | undefined,
-//   gmailClient: GmailClient,
-// ): Promise<GmailMessage | null> {
-//   if (!id) return null;
+export async function fetchMessageMetadataById(
+  id: string | null | undefined,
+  gmailClient: GmailClient,
+): Promise<GmailMessage | null> {
+  if (!id) return null;
 
-//   return fetchMessageById(id, gmailClient, "metadata");
-// }
+  return fetchMessageById(id, gmailClient, "metadata");
+}
 
 // export async function fetchFullMessageById(
 //   id: string | null | undefined,
@@ -104,7 +119,7 @@ import { getFormattedDate, isDefined, isFulfilled } from "../utils/helper.js";
 
 //     //Use allSettled to fetch what you can, skip what fails
 //     const results = await Promise.allSettled(
-//       messageIds.map((msgRef) => fetchMetadataMessageById(msgRef.id, gmailClient)),
+//       messageIds.map((msgRef) => fetchMessageMetadataById(msgRef.id, gmailClient)),
 //     );
 
 //     const rawMessages = results
@@ -139,48 +154,44 @@ import { getFormattedDate, isDefined, isFulfilled } from "../utils/helper.js";
 // }
 
 
-import { google } from "googleapis";
-import { GaxiosError } from "gaxios";
-import { disconnectGmail, getGoogleTokens } from './user.service.js';
-import getAuthenticatedClient from '../utils/getAuthenticatedClient.js';
-import { GmailClient } from "../types/gmail.js";
-import {
-  JOB_PLATFORM_SENDERS,
-  COMPANY_RECRUITING_PREFIXES,
-  SCHEDULING_PLATFORMS,
-  NEGATIVE_KEYWORDS,
-  NEGATIVE_SENDERS,
-} from "../constants/gmailFilters.js";
-
+type MessageIds = GmailMessage[] | null;
 function isInvalidGrant(error: unknown): boolean {
   return (
     error instanceof GaxiosError &&
     error.response?.data?.error === "invalid_grant"
   );
 }
-export async function intiialSyncJobApplications(userId:string) {
-
+export async function performInitialSync(userId: string) {
   try {
-    const tokensFromDb = await getGoogleTokens(userId)
+    const tokensFromDb = await getGoogleTokens(userId);
 
-   const authenticatedClient = getAuthenticatedClient(tokensFromDb)
+    const authenticatedClient = getAuthenticatedClient(tokensFromDb);
 
-   const gmailClient:GmailClient = google.gmail({
-     version: "v1",
-     auth: authenticatedClient,
-   });
+    const gmailClient: GmailClient = google.gmail({
+      version: "v1",
+      auth: authenticatedClient,
+    });
 
     const data = await gmailClient.users.getProfile({
-      userId: "me"
-    })
-
-
+      userId: "me",
+    });
 
     // return data
+    console.log(buildInitialSyncQuery())
     // return buildInitialSyncQuery()
 
-    const messageIds = await listMessageIds(gmailClient)
-return messageIds
+    const messageIds: MessageIds = await listMessageIds(gmailClient);
+    // return messageIds;
+    if (!messageIds) return null;
+
+    //Use allSettled to fetch what you can, skip what fails
+
+    const results = await Promise.allSettled(
+      messageIds.map((msgRef: GmailMessage) =>
+        fetchMessageMetadataById(msgRef.id, gmailClient),
+      ),
+    );
+    return results
   } catch (error) {
     if (isInvalidGrant(error)) {
       await disconnectGmail(userId);
@@ -188,20 +199,23 @@ return messageIds
     }
 
     throw error;
-}
+  }
 }
 
-
-export async function listMessageIds(gmailClient: GmailClient, maxResults = 500) {
+export async function listMessageIds(
+  gmailClient: GmailClient,
+  maxResults: number = 500,
+): Promise<MessageIds> {
+  const query = buildInitialSyncQuery();
   try {
     //get first 10 message ids
-    const today = new Date();
-    const priorDate = new Date(new Date().setDate(today.getDate() - 30));
+    // const today = new Date();
+    // const priorDate = new Date(new Date().setDate(today.getDate() - 30));
 
-    const formattedAfterDate = getFormattedDate(priorDate);
-    console.log(today);
-    console.log(priorDate);
-    console.log(formattedAfterDate);
+    // const formattedAfterDate = getFormattedDate(priorDate);
+    // console.log(today);
+    // console.log(priorDate);
+    // console.log(formattedAfterDate);
     const messageListResponse = await gmailClient.users.messages.list({
       userId: "me",
       maxResults: maxResults,
@@ -210,10 +224,14 @@ export async function listMessageIds(gmailClient: GmailClient, maxResults = 500)
       // q:"subject:session tokens"
       // q: `after:2026/02/07`,
       // q: `after:today`,
-      q:buildInitialSyncQuery()
+      q: query,
     });
 
-    return messageListResponse;
+    const messageIds = messageListResponse?.data?.messages;
+    if (!messageIds) {
+      return null;
+    }
+    return messageIds;
   } catch (error) {
     if (error instanceof Error) {
       console.error("listMessageIds Error:", error.message);
@@ -222,85 +240,4 @@ export async function listMessageIds(gmailClient: GmailClient, maxResults = 500)
     }
     return null;
   }
-}
-
-
-// utils/gmailQuery.ts
-
-
-
-/**
- * Build initial sync query: last 30 days of job-related emails
- * Focuses on high-confidence signals (known platforms, recruiting addresses)
- */
-export function buildInitialSyncQuery(): string {
-  // All "from:" clauses
-  const fromClauses = [
-    ...JOB_PLATFORM_SENDERS.map(domain => `from:${domain}`),
-    ...COMPANY_RECRUITING_PREFIXES.map(prefix => `from:${prefix}`),
-    ...SCHEDULING_PLATFORMS.map(domain => `from:${domain}`),
-  ];
-
-  // Exclude noise
-  const negativeFilter = NEGATIVE_KEYWORDS
-    .map(kw => `-subject:${kw}`)
-    .join(' ');
-
-  return `category:primary
-    newer_than:30d
-    (${fromClauses.join(' OR ')})
-    ${negativeFilter}
-  `.trim();
-}
-
-/**
- * Build nightly sync query: today's emails only
- * Runs every night to catch new applications, interviews, rejections
- */
-export function buildNightlySyncQuery(): string {
-  const today = new Date().toISOString().split('T')[0];
-
-  const fromClauses = [
-    ...JOB_PLATFORM_SENDERS.map(domain => `from:${domain}`),
-    ...COMPANY_RECRUITING_PREFIXES.map(prefix => `from:${prefix}`),
-    ...SCHEDULING_PLATFORMS.map(domain => `from:${domain}`),
-  ];
-
-  const negativeFilter = NEGATIVE_KEYWORDS
-    .map(kw => `-subject:${kw}`)
-    .join(' ');
-  const negativeFromFilter = NEGATIVE_SENDERS
-    .map(kw => `-from:${kw}`);
-
-  return `
-    category:primary    after:${today}
-    (${fromClauses.join(' OR ')})    ${negativeFilter}    ${negativeFromFilter.join(' OR ')}
-  `.trim();
-}
-
-/**
- * Build fallback query when historyId expires
- * Same as initial, but only fetches emails we haven't already parsed
- */
-export function buildResyncQuery(lastSyncTimestamp: Date): string {
-  const fromDate = new Date(lastSyncTimestamp);
-  fromDate.setDate(fromDate.getDate() - 1); // 1 day buffer for safety
-  const dateStr = fromDate.toISOString().split('T')[0];
-
-  const fromClauses = [
-    ...JOB_PLATFORM_SENDERS.map(domain => `from:${domain}`),
-    ...COMPANY_RECRUITING_PREFIXES.map(prefix => `from:${prefix}`),
-    ...SCHEDULING_PLATFORMS.map(domain => `from:${domain}`),
-  ];
-
-  const negativeFilter = NEGATIVE_KEYWORDS
-    .map(kw => `-subject:${kw}`)
-    .join(' ');
-
-  return `
-    category:primary
-    after:${dateStr}
-    (${fromClauses.join(' OR ')})
-    ${negativeFilter}
-  `.trim();
 }
