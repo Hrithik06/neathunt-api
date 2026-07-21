@@ -15,6 +15,8 @@ import {
   GmailMessage,
 } from "../types/gmail.js";
 import { buildInitialSyncQuery } from "../utils/gmailQuery.js";
+import { extractNameAndAddress, normalizeMetadataMessage } from "../utils/gmail.utils.js";
+import { listMessageIdsMockData } from "./mockData.js";
 
 
 
@@ -155,6 +157,11 @@ export async function fetchMessageMetadataById(
 
 
 type MessageIds = GmailMessage[] | null;
+type FullfilledMessageMetadata = {
+  // status: "fulfilled" | "pending" | "rejected";
+  status: "fulfilled";
+  value:GmailMessage
+}
 function isInvalidGrant(error: unknown): boolean {
   return (
     error instanceof GaxiosError &&
@@ -177,7 +184,7 @@ export async function performInitialSync(userId: string) {
     });
 
     // return data
-    console.log(buildInitialSyncQuery())
+    // console.log(buildInitialSyncQuery())
     // return buildInitialSyncQuery()
 
     const messageIds: MessageIds = await listMessageIds(gmailClient);
@@ -185,13 +192,19 @@ export async function performInitialSync(userId: string) {
     if (!messageIds) return null;
 
     //Use allSettled to fetch what you can, skip what fails
+    const listMessageMetadata = listMessageIdsMockData
+    // const listMessageMetadata= await Promise.allSettled(
+    //   messageIds.map((msgRef: GmailMessage) =>
+    //     fetchMessageMetadataById(msgRef.id, gmailClient),
+    //   ),
+    // );
+    // return listMessageMetadata
 
-    const results = await Promise.allSettled(
-      messageIds.map((msgRef: GmailMessage) =>
-        fetchMessageMetadataById(msgRef.id, gmailClient),
-      ),
-    );
-    return results
+    const onlyFulfilledObjs = listMessageMetadata.filter((settledObj) => settledObj.status === "fulfilled") as FullfilledMessageMetadata[]
+
+    const normalizedMetadataList = onlyFulfilledObjs.map((settledObj) => normalizeMetadataMessage(settledObj.value))
+
+   return normalizedMetadataList.map((data)=>{return {...data, ...extractNameAndAddress(data?.headers?.from)}} )
   } catch (error) {
     if (isInvalidGrant(error)) {
       await disconnectGmail(userId);

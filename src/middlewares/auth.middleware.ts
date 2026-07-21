@@ -24,7 +24,8 @@ export const authMiddleware = async (
 
     req.user = decoded; // { userId }
     next();
-  } catch {
+  } catch (err) {
+    console.log(err)
     return res.status(401).json({ error: "Unauthorized" });
   }
 };

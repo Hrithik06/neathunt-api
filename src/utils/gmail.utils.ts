@@ -186,23 +186,39 @@ export function extractNameAndAddress(from: string) {
   //    "from": "Indeed <alert@indeed.com>",
   // Ignore Match    "from": "Indeed <donotreply@match.indeed.com>"
   from = from.replaceAll(/"/g, "").trim();
-  const ignoreList = ["match", "alert", "alerts", "via"]; //maybe add emailIds like ["naukrialerts@naukri.com","donotreply@match.indeed.com"]
-  let hasIgnoreKey = false;
-  for (const key of ignoreList) {
-    if (from.includes(key)) {
-      hasIgnoreKey = true;
-      break; //or return here itself
-    }
-  }
-  if (hasIgnoreKey) {
-    // return something such that the JS object which has this from is set as not a job related mail and not to be processed further
-    return;
-  }
-  const fromArr = from.split("<");
-  const senderName = fromArr[0].trim();
-  const senderMail = fromArr[1].trim().slice(0, -1);
+  // const ignoreList = ["match", "alert", "alerts"]; //maybe add emailIds like ["naukrialerts@naukri.com","donotreply@match.indeed.com"]
+  // let hasIgnoreKey = false;
+  // for (const key of ignoreList) {
+  //   if (from.toLowerCase().includes(key)) {
+  //     hasIgnoreKey = true;
+  //     break; //or return here itself
+  //   }
+  // }
+  // if (hasIgnoreKey) {
+  //   // return something such that the JS object which has this from is set as not a job related mail and not to be processed further
+  //   return {hasIgnoreKey:true};
+  // }
+  // const fromArr = from.split("<");
+  // const senderName = fromArr[0].trim();
+  // const senderMail = fromArr[1].trim().slice(0, -1);
+  let senderName=""
+  let senderMail = ""
 
-  return { senderName, senderMail };
+  const match = from.match(/^(?:"?(.+?)"?\s)?<(.+)>$/);
+
+  const senderDomain = match ? match[2].split("@")[1] : from.split("@")[1]
+  if (match) {
+
+      senderName= match[1] ?? ""
+      senderMail= match[2]
+
+  } else {
+
+      senderName= ""
+      senderMail= from
+
+  }
+  return { senderName, senderMail, senderDomain };
 }
 
 export function extractCompanyNameFromSubject() {

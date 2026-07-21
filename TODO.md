@@ -1,4 +1,4 @@
-[ ] wrap all db operations in try catch and return appropriate response when error in db operation
+[ ] wrap all db operations in try catch and return appropriate response when error in db operation. Check error.md
 
 [ ] requireScopes.middleware.ts needed or not? decide
 

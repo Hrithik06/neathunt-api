@@ -70,3 +70,4 @@ temp/
 
 email-data/
 personal-docs/
+src/services/mockData.ts
